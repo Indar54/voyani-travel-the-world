@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,31 @@ import { toast } from 'sonner';
 
 const CreateGroup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [formState, setFormState] = useState({
+    title: '',
+    destination: '',
+  });
+  
+  // Check if coming from local travel flow and pre-fill data
+  useEffect(() => {
+    if (location.state?.fromLocalTravel) {
+      const { state, destination } = location.state;
+      setFormState({
+        title: `${destination} Local Adventure`,
+        destination: `${destination}, ${state}`,
+      });
+      
+      // Add some suggested tags based on the destination
+      setTags(['Local Tourism', 'Weekend Trip']);
+    }
+  }, [location.state]);
   
   const handleAddTag = () => {
     if (newTag && !tags.includes(newTag) && tags.length < 6) {
@@ -45,6 +64,14 @@ const CreateGroup = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormState(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -82,12 +109,24 @@ const CreateGroup = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Trip Title</Label>
-                <Input id="title" placeholder="e.g., Weekend Hiking in the Himalayas" required />
+                <Input 
+                  id="title" 
+                  placeholder="e.g., Weekend Hiking in the Himalayas" 
+                  required 
+                  value={formState.title}
+                  onChange={handleInputChange}
+                />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="destination">Destination</Label>
-                <Input id="destination" placeholder="e.g., Manali, Himachal Pradesh" required />
+                <Input 
+                  id="destination" 
+                  placeholder="e.g., Manali, Himachal Pradesh" 
+                  required 
+                  value={formState.destination}
+                  onChange={handleInputChange}
+                />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -290,7 +329,7 @@ const CreateGroup = () => {
           </Card>
           
           <CardFooter className="flex justify-between px-0">
-            <Button variant="outline" type="button" onClick={() => navigate('/browse')}>
+            <Button variant="outline" type="button" onClick={() => navigate(-1)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

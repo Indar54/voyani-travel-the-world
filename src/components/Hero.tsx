@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, MapPin, Users, Calendar } from 'lucide-react';
+import { ArrowRight, MapPin, Users, Calendar, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Hero: React.FC = () => {
@@ -31,7 +31,7 @@ const Hero: React.FC = () => {
             Whether you're looking for adventure buddies or planning your own journey, Voyani makes group travel simple.
           </p>
           
-          <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in animate-delay-200">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-4 animate-fade-in animate-delay-200">
             <Button 
               size="lg" 
               className="text-md px-6 py-6 shadow-lg hover-lift"
@@ -47,6 +47,15 @@ const Hero: React.FC = () => {
               onClick={() => navigate('/create-group')}
             >
               Create a Trip
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              className="text-md px-6 py-6 hover-lift"
+              onClick={() => navigate('/local-travel')}
+            >
+              Local Travel Plans
+              <Navigation className="ml-2 h-5 w-5" />
             </Button>
           </div>
           

@@ -1,0 +1,89 @@
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import StateSelection from '@/components/StateSelection';
+import DestinationSelection from '@/components/DestinationSelection';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+
+const LocalTravel = () => {
+  const navigate = useNavigate();
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
+  
+  const handleStateSelect = (state: string) => {
+    setSelectedState(state);
+    setSelectedDestination(null); // Reset destination when state changes
+  };
+  
+  const handleDestinationSelect = (destination: string) => {
+    setSelectedDestination(destination);
+  };
+  
+  const handleContinue = () => {
+    if (selectedState && selectedDestination) {
+      navigate('/create-group', { 
+        state: { 
+          fromLocalTravel: true,
+          state: selectedState,
+          destination: selectedDestination
+        } 
+      });
+    }
+  };
+  
+  const handleBack = () => {
+    if (selectedDestination) {
+      setSelectedDestination(null);
+    } else if (selectedState) {
+      setSelectedState(null);
+    } else {
+      navigate('/');
+    }
+  };
+  
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8 animate-fade-in">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleBack}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-3xl font-bold">Local Travel Plans</h1>
+        </div>
+        
+        {!selectedState ? (
+          <StateSelection onSelectState={handleStateSelect} />
+        ) : !selectedDestination ? (
+          <DestinationSelection 
+            state={selectedState} 
+            onSelectDestination={handleDestinationSelect} 
+          />
+        ) : (
+          <div className="text-center space-y-6 py-12">
+            <h2 className="text-2xl font-bold">Ready to Create Your Trip!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              You've selected {selectedDestination} in {selectedState}. 
+              Now you can create a travel group and find companions for your journey.
+            </p>
+            <Button 
+              size="lg"
+              onClick={handleContinue}
+              className="mt-4"
+            >
+              Continue to Create Group
+            </Button>
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+};
+
+export default LocalTravel;

@@ -11,6 +11,7 @@ import CreateGroup from "./pages/CreateGroup";
 import GroupDetails from "./pages/GroupDetails";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import LocalTravel from "./pages/LocalTravel";
 
 // Force dark mode
 document.documentElement.classList.add('dark');
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:id" element={<GroupDetails />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/local-travel" element={<LocalTravel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
