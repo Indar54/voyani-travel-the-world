@@ -29,13 +29,13 @@ const Navbar: React.FC = () => {
         to={to} 
         className={`relative px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out
         ${isActive 
-          ? 'text-orange-400' 
-          : 'text-foreground/80 hover:text-orange-400'
+          ? 'text-white' 
+          : 'text-foreground/80 hover:text-white'
         }`}
       >
         {children}
         {isActive && (
-          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full" />
+          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-white rounded-full" />
         )}
       </Link>
     );
@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-orange-400 flex items-center justify-center bg-black">
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-gray-600 flex items-center justify-center bg-black">
                 <img 
                   src="/lovable-uploads/26b716be-235d-43dd-833a-6bb8cfa8bb30.png" 
                   alt="Voyani" 
@@ -79,7 +79,7 @@ const Navbar: React.FC = () => {
               </Button>
             </Link>
 
-            <Button variant="default" className="hidden md:flex items-center gap-2 bg-orange-500 hover:bg-orange-600">
+            <Button variant="default" className="hidden md:flex items-center gap-2">
               <Map className="h-4 w-4" />
               Join a Trip
             </Button>

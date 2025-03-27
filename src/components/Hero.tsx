@@ -12,21 +12,21 @@ const Hero: React.FC = () => {
       <div className="container mx-auto px-4 py-20 sm:py-24 md:py-32">
         <div className="max-w-3xl mx-auto text-center">
           <div className="flex justify-center">
-            <span className="inline-flex items-center rounded-full px-4 py-1 text-xs font-medium bg-voyani-100 text-voyani-800 mb-6 animate-fade-in">
+            <span className="inline-flex items-center rounded-full px-4 py-1 text-xs font-medium bg-gray-100 text-gray-800 mb-6 animate-fade-in">
               <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-voyani-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-voyani-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-500"></span>
               </span>
               Discover Travel Companions For Your Next Adventure
             </span>
           </div>
           
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl animate-fade-in text-balance">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-100 sm:text-5xl md:text-6xl animate-fade-in text-balance">
             <span className="block">Travel Together,</span>
-            <span className="block text-voyani-600">Create Memories</span>
+            <span className="block text-white">Create Memories</span>
           </h1>
           
-          <p className="mt-6 text-lg leading-8 text-gray-600 animate-fade-in animate-delay-100 text-balance">
+          <p className="mt-6 text-lg leading-8 text-gray-300 animate-fade-in animate-delay-100 text-balance">
             Connect with like-minded travelers, join exciting group trips, and explore the world in good company. 
             Whether you're looking for adventure buddies or planning your own journey, Voyani makes group travel simple.
           </p>
@@ -58,14 +58,14 @@ const Hero: React.FC = () => {
             ].map((feature, index) => (
               <div 
                 key={index} 
-                className="bg-white/50 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-white/40 hover-lift animate-fade-in"
+                className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-white/10 hover-lift animate-fade-in"
                 style={{ animationDelay: `${(index + 3) * 100}ms` }}
               >
-                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-voyani-100 text-voyani-600 mx-auto mb-4">
+                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-gray-800 text-gray-200 mx-auto mb-4">
                   <feature.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-600">{feature.description}</p>
+                <h3 className="text-lg font-medium text-gray-100 mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-300">{feature.description}</p>
               </div>
             ))}
           </div>
