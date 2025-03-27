@@ -12,6 +12,9 @@ import GroupDetails from "./pages/GroupDetails";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
+// Force dark mode
+document.documentElement.classList.add('dark');
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,7 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/browse" element={<BrowseGroups />} />
+          <Route path="/browse" element={<BrowserRouter />} />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:id" element={<GroupDetails />} />
           <Route path="/profile" element={<Profile />} />

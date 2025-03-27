@@ -26,16 +26,22 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				voyani: {
-					50: '#f0f9ff',
-					100: '#e0f2fe',
-					200: '#bae6fd',
-					300: '#7dd3fc',
-					400: '#38bdf8',
-					500: '#0ea5e9',
-					600: '#0284c7',
-					700: '#0369a1',
-					800: '#075985',
-					900: '#0c4a6e',
+					50: '#fff5eb',
+					100: '#ffe6cc',
+					200: '#ffd1a3',
+					300: '#ffb56b',
+					400: '#ff9933', // Indian saffron color
+					500: '#ff7e1f',
+					600: '#ff6600',
+					700: '#cc4400',
+					800: '#a63600',
+					900: '#802b00',
+				},
+				india: {
+					saffron: '#FF9933',
+					white: '#FFFFFF',
+					green: '#138808',
+					blue: '#000080',
 				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
@@ -159,6 +165,9 @@ export default {
 				'scale-in': 'scale-in 0.3s ease-out',
 				'scale-out': 'scale-out 0.3s ease-out',
 				'float': 'float 5s ease-in-out infinite',
+			},
+			backgroundImage: {
+				'india-pattern': "url(\"data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ff9933' fill-opacity='0.15'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
 			}
 		}
 	},

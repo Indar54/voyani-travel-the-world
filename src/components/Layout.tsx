@@ -11,7 +11,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background indian-pattern">
       <Navbar />
       <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         <div 
@@ -22,7 +22,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </main>
       <footer className="py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Voyani. All rights reserved.</p>
+        <div className="max-w-md mx-auto flex flex-col items-center">
+          <div className="w-24 h-1 mb-3 bg-gradient-to-r from-india-saffron via-india-white to-india-green rounded-full opacity-70"></div>
+          <p>© {new Date().getFullYear()} Voyani India. All rights reserved.</p>
+          <p className="mt-2 text-xs">Connecting Indian travelers, one journey at a time.</p>
+        </div>
       </footer>
     </div>
   );

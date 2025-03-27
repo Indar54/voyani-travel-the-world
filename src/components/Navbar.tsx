@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, X, User, Globe, Map } from 'lucide-react';
+import { Search, Menu, X, User, Map } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -29,13 +29,13 @@ const Navbar: React.FC = () => {
         to={to} 
         className={`relative px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out
         ${isActive 
-          ? 'text-voyani-600' 
-          : 'text-foreground/80 hover:text-voyani-600'
+          ? 'text-orange-400' 
+          : 'text-foreground/80 hover:text-orange-400'
         }`}
       >
         {children}
         {isActive && (
-          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-voyani-500 rounded-full" />
+          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full" />
         )}
       </Link>
     );
@@ -44,14 +44,20 @@ const Navbar: React.FC = () => {
   return (
     <header 
       className={`sticky top-0 z-40 w-full transition-all duration-200 
-      ${scrolled ? 'glass-navbar' : 'bg-transparent'}`}
+      ${scrolled ? 'neo-blur' : 'bg-transparent'}`}
     >
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <Globe className="h-8 w-8 text-voyani-500" />
-              <span className="ml-2 text-xl font-bold text-foreground">Voyani</span>
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-orange-400 flex items-center justify-center bg-black">
+                <img 
+                  src="/lovable-uploads/26b716be-235d-43dd-833a-6bb8cfa8bb30.png" 
+                  alt="Voyani" 
+                  className="h-8 w-8 object-contain"
+                />
+              </div>
+              <span className="ml-2 text-xl font-bold text-foreground text-gradient">Voyani</span>
             </Link>
           </div>
           
@@ -73,7 +79,7 @@ const Navbar: React.FC = () => {
               </Button>
             </Link>
 
-            <Button variant="default" className="hidden md:flex items-center gap-2">
+            <Button variant="default" className="hidden md:flex items-center gap-2 bg-orange-500 hover:bg-orange-600">
               <Map className="h-4 w-4" />
               Join a Trip
             </Button>
@@ -92,32 +98,32 @@ const Navbar: React.FC = () => {
       
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-card animate-fade-in">
+        <div className="md:hidden neo-blur animate-fade-in">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link 
               to="/" 
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-voyani-50"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
             </Link>
             <Link 
               to="/browse" 
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-voyani-50"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
               onClick={() => setMobileMenuOpen(false)}
             >
               Explore
             </Link>
             <Link 
               to="/create-group" 
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-voyani-50"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
               onClick={() => setMobileMenuOpen(false)}
             >
               Create Group
             </Link>
             <Link 
               to="/auth" 
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-voyani-50"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
               onClick={() => setMobileMenuOpen(false)}
             >
               Sign In
