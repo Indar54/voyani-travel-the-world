@@ -82,12 +82,12 @@ const CreateGroup = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Trip Title</Label>
-                <Input id="title" placeholder="e.g., Weekend Hiking in the Alps" required />
+                <Input id="title" placeholder="e.g., Weekend Hiking in the Himalayas" required />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="destination">Destination</Label>
-                <Input id="destination" placeholder="e.g., Interlaken, Switzerland" required />
+                <Input id="destination" placeholder="e.g., Manali, Himachal Pradesh" required />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -184,11 +184,12 @@ const CreateGroup = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="spanish">Spanish</SelectItem>
-                      <SelectItem value="french">French</SelectItem>
-                      <SelectItem value="german">German</SelectItem>
-                      <SelectItem value="chinese">Chinese</SelectItem>
-                      <SelectItem value="japanese">Japanese</SelectItem>
+                      <SelectItem value="hindi">Hindi</SelectItem>
+                      <SelectItem value="tamil">Tamil</SelectItem>
+                      <SelectItem value="telugu">Telugu</SelectItem>
+                      <SelectItem value="bengali">Bengali</SelectItem>
+                      <SelectItem value="marathi">Marathi</SelectItem>
+                      <SelectItem value="punjabi">Punjabi</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -197,13 +198,13 @@ const CreateGroup = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="price-range">Estimated Budget Range (per person)</Label>
-                <Slider defaultValue={[500]} max={2000} step={100} />
+                <Slider defaultValue={[15000]} max={60000} step={5000} />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>$0</span>
-                  <span>$500</span>
-                  <span>$1000</span>
-                  <span>$1500</span>
-                  <span>$2000+</span>
+                  <span>₹0</span>
+                  <span>₹15000</span>
+                  <span>₹30000</span>
+                  <span>₹45000</span>
+                  <span>₹60000+</span>
                 </div>
               </div>
               
@@ -232,7 +233,7 @@ const CreateGroup = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Add activities like hiking, food tours, or interests like photography
+                  Add activities like temple visits, street food tours, or interests like photography
                 </p>
               </div>
             </CardContent>

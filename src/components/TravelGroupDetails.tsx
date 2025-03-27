@@ -84,7 +84,7 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
                   <Globe className="h-5 w-5 mr-2 text-voyani-500" />
                   <div>
                     <div className="text-sm text-muted-foreground">Language</div>
-                    <div className="font-medium">English</div>
+                    <div className="font-medium">Hindi, English</div>
                   </div>
                 </div>
               </div>
@@ -92,18 +92,18 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
             
             <div className="mb-8 animate-fade-in animate-delay-200">
               <h2 className="text-2xl font-bold mb-4">About This Trip</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-300 mb-4">
                 Join us for an unforgettable adventure to {group.destination}! This trip is perfect for travelers who love
                 {group.tags.join(', ')}. We'll explore local culture, enjoy the beautiful scenery, and create memories together.
               </p>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-300 mb-4">
                 Our itinerary includes plenty of time for both group activities and personal exploration.
                 This trip is designed for {group.tags[0].toLowerCase()} enthusiasts who want to experience
                 the best that {group.destination} has to offer in good company.
               </p>
               
               <h3 className="text-xl font-semibold mt-6 mb-3">Trip Highlights</h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
+              <ul className="list-disc pl-5 space-y-2 text-gray-300">
                 <li>Explore the stunning landscapes and natural beauty</li>
                 <li>Experience local culture and cuisine with insider recommendations</li>
                 <li>Flexible itinerary with both group activities and free time</li>
@@ -111,7 +111,7 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
               </ul>
               
               <h3 className="text-xl font-semibold mt-6 mb-3">What's Included</h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
+              <ul className="list-disc pl-5 space-y-2 text-gray-300">
                 <li>Accommodation in shared rooms (private options available)</li>
                 <li>Welcome dinner and farewell celebration</li>
                 <li>Local transportation for group activities</li>
@@ -156,7 +156,7 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">Alex Donovan</div>
+                    <div className="font-medium">Amit Desai</div>
                     <div className="text-sm text-muted-foreground">18 trips organized</div>
                   </div>
                 </div>

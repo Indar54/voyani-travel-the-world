@@ -26,7 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/browse" element={<BrowserRouter />} />
+          <Route path="/browse" element={<BrowseGroups />} />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:id" element={<GroupDetails />} />
           <Route path="/profile" element={<Profile />} />
