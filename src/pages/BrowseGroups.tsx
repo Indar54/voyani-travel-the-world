@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import TravelGroupCard, { TravelGroup } from '@/components/TravelGroupCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -17,9 +16,9 @@ import { Search, Filter, X, Calendar, Users, MapPin } from 'lucide-react';
 const allGroups: TravelGroup[] = [
   {
     id: '1',
-    title: 'Beach Getaway in Bali',
-    destination: 'Bali, Indonesia',
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+    title: 'Beach Getaway in Goa',
+    destination: 'Goa, India',
+    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-11-15',
     endDate: '2023-11-25',
     maxParticipants: 8,
@@ -28,31 +27,31 @@ const allGroups: TravelGroup[] = [
   },
   {
     id: '2',
-    title: 'Tokyo Anime & Culture Tour',
-    destination: 'Tokyo, Japan',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+    title: 'Temple Tour in Madurai',
+    destination: 'Tamil Nadu, India',
+    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-12-05',
     endDate: '2023-12-15',
     maxParticipants: 6,
     currentParticipants: 3,
-    tags: ['Urban', 'Anime', 'Shopping', 'Food']
+    tags: ['Temple', 'Architecture', 'Spirituality', 'Food']
   },
   {
     id: '3',
-    title: 'Hiking the Italian Alps',
-    destination: 'Dolomites, Italy',
-    image: 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?auto=format&fit=crop&w=800&q=80',
+    title: 'Trekking in Himachal',
+    destination: 'Himachal Pradesh, India',
+    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-01-10',
     endDate: '2024-01-18',
     maxParticipants: 10,
     currentParticipants: 6,
-    tags: ['Hiking', 'Mountains', 'Adventure', 'Nature']
+    tags: ['Trekking', 'Mountains', 'Adventure', 'Nature']
   },
   {
     id: '4',
-    title: 'Safari Adventure in Kenya',
-    destination: 'Maasai Mara, Kenya',
-    image: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=800&q=80',
+    title: 'Wildlife Safari in Ranthambore',
+    destination: 'Rajasthan, India',
+    image: 'https://images.unsplash.com/photo-1615031644648-282022864623?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-02-01',
     endDate: '2024-02-10',
     maxParticipants: 12,
@@ -61,9 +60,9 @@ const allGroups: TravelGroup[] = [
   },
   {
     id: '5',
-    title: 'Exploring Ancient Ruins of Greece',
-    destination: 'Athens, Greece',
-    image: 'https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?auto=format&fit=crop&w=800&q=80',
+    title: 'Heritage Walk in Delhi',
+    destination: 'Delhi, India',
+    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-03-15',
     endDate: '2024-03-25',
     maxParticipants: 8,
@@ -72,14 +71,14 @@ const allGroups: TravelGroup[] = [
   },
   {
     id: '6',
-    title: 'Northern Lights in Iceland',
-    destination: 'Reykjavik, Iceland',
-    image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=80',
+    title: 'Backwaters of Kerala',
+    destination: 'Kerala, India',
+    image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-01-20',
     endDate: '2024-01-28',
     maxParticipants: 6,
     currentParticipants: 4,
-    tags: ['Northern Lights', 'Winter', 'Photography', 'Hot Springs']
+    tags: ['Backwaters', 'Relaxation', 'Nature', 'Cuisine']
   }
 ];
 
@@ -88,6 +87,10 @@ const BrowseGroups = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [filteredGroups, setFilteredGroups] = useState<TravelGroup[]>(allGroups);
+  const [dateRange, setDateRange] = useState<string>("any");
+  const [destination, setDestination] = useState<string>("any");
+  const [duration, setDuration] = useState<number[]>([7]);
+  const [groupSize, setGroupSize] = useState<string>("any");
   
   // All unique tags from groups
   const allTags = [...new Set(allGroups.flatMap(group => group.tags))].sort();
@@ -99,6 +102,11 @@ const BrowseGroups = () => {
         : [...prevTags, tag]
     );
   };
+  
+  // Apply search immediately when typing
+  useEffect(() => {
+    handleFilter();
+  }, [searchTerm]);
   
   const handleFilter = () => {
     let results = allGroups;
@@ -121,12 +129,67 @@ const BrowseGroups = () => {
       );
     }
     
+    // Filter by date range (if implemented)
+    if (dateRange !== "any") {
+      const now = new Date();
+      const oneMonthLater = new Date(now);
+      oneMonthLater.setMonth(now.getMonth() + 1);
+      
+      const threeMonthsLater = new Date(now);
+      threeMonthsLater.setMonth(now.getMonth() + 3);
+      
+      const sixMonthsLater = new Date(now);
+      sixMonthsLater.setMonth(now.getMonth() + 6);
+      
+      results = results.filter(group => {
+        const startDate = new Date(group.startDate);
+        
+        switch(dateRange) {
+          case "next-month":
+            return startDate >= now && startDate <= oneMonthLater;
+          case "next-3-months":
+            return startDate >= now && startDate <= threeMonthsLater;
+          case "next-6-months":
+            return startDate >= now && startDate <= sixMonthsLater;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Filter by destination
+    if (destination !== "any") {
+      results = results.filter(group => {
+        return group.destination.toLowerCase().includes(destination.toLowerCase());
+      });
+    }
+    
+    // Filter by group size
+    if (groupSize !== "any") {
+      results = results.filter(group => {
+        switch(groupSize) {
+          case "small":
+            return group.maxParticipants >= 2 && group.maxParticipants <= 4;
+          case "medium":
+            return group.maxParticipants >= 5 && group.maxParticipants <= 8;
+          case "large":
+            return group.maxParticipants >= 9;
+          default:
+            return true;
+        }
+      });
+    }
+    
     setFilteredGroups(results);
   };
   
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedTags([]);
+    setDateRange("any");
+    setDestination("any");
+    setDuration([7]);
+    setGroupSize("any");
     setFilteredGroups(allGroups);
   };
   
@@ -158,7 +221,6 @@ const BrowseGroups = () => {
               placeholder="Search by destination, activity, or keywords..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyUp={(e) => e.key === 'Enter' && handleFilter()}
             />
             {searchTerm && (
               <Button
@@ -167,7 +229,6 @@ const BrowseGroups = () => {
                 className="absolute right-3 top-2"
                 onClick={() => {
                   setSearchTerm('');
-                  handleFilter();
                 }}
               >
                 <X className="h-4 w-4" />
@@ -184,7 +245,10 @@ const BrowseGroups = () => {
                   <Label className="text-base font-medium mb-2 block">Date Range</Label>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 text-muted-foreground mr-2" />
-                    <Select defaultValue="any">
+                    <Select 
+                      value={dateRange}
+                      onValueChange={setDateRange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Any time" />
                       </SelectTrigger>
@@ -202,18 +266,21 @@ const BrowseGroups = () => {
                   <Label className="text-base font-medium mb-2 block">Destination</Label>
                   <div className="flex items-center">
                     <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
-                    <Select defaultValue="any">
+                    <Select 
+                      value={destination}
+                      onValueChange={setDestination}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Any destination" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any destination</SelectItem>
-                        <SelectItem value="asia">Asia</SelectItem>
-                        <SelectItem value="europe">Europe</SelectItem>
-                        <SelectItem value="north-america">North America</SelectItem>
-                        <SelectItem value="south-america">South America</SelectItem>
-                        <SelectItem value="africa">Africa</SelectItem>
-                        <SelectItem value="oceania">Oceania</SelectItem>
+                        <SelectItem value="goa">Goa</SelectItem>
+                        <SelectItem value="tamil">Tamil Nadu</SelectItem>
+                        <SelectItem value="himachal">Himachal Pradesh</SelectItem>
+                        <SelectItem value="rajasthan">Rajasthan</SelectItem>
+                        <SelectItem value="delhi">Delhi</SelectItem>
+                        <SelectItem value="kerala">Kerala</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -225,7 +292,12 @@ const BrowseGroups = () => {
                     <div className="flex justify-between">
                       <span className="text-sm">1-14 days</span>
                     </div>
-                    <Slider defaultValue={[7]} max={14} step={1} />
+                    <Slider 
+                      defaultValue={duration} 
+                      max={14} 
+                      step={1}
+                      onValueChange={setDuration}
+                    />
                   </div>
                 </div>
                 
@@ -233,7 +305,10 @@ const BrowseGroups = () => {
                   <Label className="text-base font-medium mb-2 block">Group Size</Label>
                   <div className="flex items-center">
                     <Users className="h-4 w-4 text-muted-foreground mr-2" />
-                    <Select defaultValue="any">
+                    <Select
+                      value={groupSize}
+                      onValueChange={setGroupSize}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Any size" />
                       </SelectTrigger>
@@ -259,8 +334,8 @@ const BrowseGroups = () => {
                       variant={selectedTags.includes(tag) ? "default" : "outline"}
                       className={`cursor-pointer ${
                         selectedTags.includes(tag) 
-                          ? "bg-voyani-500" 
-                          : "hover:bg-voyani-100 hover:text-voyani-700"
+                          ? "bg-gray-800" 
+                          : "hover:bg-gray-100 hover:text-gray-700"
                       }`}
                       onClick={() => handleTagToggle(tag)}
                     >

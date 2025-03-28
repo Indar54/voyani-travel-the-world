@@ -9,9 +9,9 @@ import { useNavigate } from 'react-router-dom';
 const featuredGroups: TravelGroup[] = [
   {
     id: '1',
-    title: 'Beach Getaway in Bali',
-    destination: 'Bali, Indonesia',
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+    title: 'Beach Getaway in Goa',
+    destination: 'Goa, India',
+    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-11-15',
     endDate: '2023-11-25',
     maxParticipants: 8,
@@ -20,25 +20,25 @@ const featuredGroups: TravelGroup[] = [
   },
   {
     id: '2',
-    title: 'Tokyo Anime & Culture Tour',
-    destination: 'Tokyo, Japan',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+    title: 'Temple Tour in Madurai',
+    destination: 'Tamil Nadu, India',
+    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-12-05',
     endDate: '2023-12-15',
     maxParticipants: 6,
     currentParticipants: 3,
-    tags: ['Urban', 'Anime', 'Shopping', 'Food']
+    tags: ['Temple', 'Architecture', 'Spirituality', 'Food']
   },
   {
     id: '3',
-    title: 'Hiking the Italian Alps',
-    destination: 'Dolomites, Italy',
-    image: 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?auto=format&fit=crop&w=800&q=80',
+    title: 'Trekking in Himachal',
+    destination: 'Himachal Pradesh, India',
+    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-01-10',
     endDate: '2024-01-18',
     maxParticipants: 10,
     currentParticipants: 6,
-    tags: ['Hiking', 'Mountains', 'Adventure', 'Nature']
+    tags: ['Trekking', 'Mountains', 'Adventure', 'Nature']
   }
 ];
 

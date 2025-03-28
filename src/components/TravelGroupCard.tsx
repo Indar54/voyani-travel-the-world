@@ -34,6 +34,9 @@ const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
   // Calculate days until trip
   const daysUntil = Math.ceil((new Date(group.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   
+  // Fallback image for broken links
+  const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
+  
   return (
     <Link to={`/group/${group.id}`}>
       <Card className="overflow-hidden hover-lift h-full bg-white border-white/60">
@@ -43,9 +46,13 @@ const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
             alt={group.title} 
             className="object-cover w-full h-48"
             loading="lazy"
+            onError={(e) => {
+              console.log(`Image failed to load: ${group.image}`);
+              (e.target as HTMLImageElement).src = fallbackImage;
+            }}
           />
           <div className="absolute top-4 left-4">
-            <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-voyani-800 font-medium">
+            <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-gray-800 font-medium">
               {daysUntil > 0 ? `${daysUntil} days away` : "Ongoing"}
             </Badge>
           </div>
@@ -57,7 +64,7 @@ const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
           </div>
           
           <div className="flex items-center text-sm text-muted-foreground mb-4">
-            <MapPin className="h-4 w-4 mr-1 text-voyani-500" />
+            <MapPin className="h-4 w-4 mr-1 text-gray-500" />
             <span>{group.destination}</span>
           </div>
           
@@ -74,7 +81,7 @@ const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
           
           <div className="mt-4 flex flex-wrap gap-2">
             {group.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="outline" className="bg-voyani-50/60 border-voyani-100 text-voyani-700 text-xs">
+              <Badge key={index} variant="outline" className="bg-gray-100/60 border-gray-200 text-gray-700 text-xs">
                 {tag}
               </Badge>
             ))}
@@ -90,20 +97,20 @@ const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
           <div className="flex -space-x-2">
             {[...Array(Math.min(3, group.currentParticipants))].map((_, i) => (
               <Avatar key={i} className="border-2 border-white h-8 w-8">
-                <AvatarFallback className="bg-voyani-100 text-voyani-700 text-xs">
+                <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
                   {String.fromCharCode(65 + i)}
                 </AvatarFallback>
               </Avatar>
             ))}
             {group.currentParticipants > 3 && (
               <Avatar className="border-2 border-white h-8 w-8">
-                <AvatarFallback className="bg-voyani-100 text-voyani-700 text-xs">
+                <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
                   +{group.currentParticipants - 3}
                 </AvatarFallback>
               </Avatar>
             )}
           </div>
-          <div className="text-voyani-600 flex items-center font-medium text-sm">
+          <div className="text-gray-600 flex items-center font-medium text-sm">
             View Details
             <ChevronRight className="h-4 w-4 ml-1" />
           </div>

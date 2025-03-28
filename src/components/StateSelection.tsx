@@ -15,6 +15,9 @@ interface StateData {
 }
 
 const StateSelection: React.FC<StateSelectionProps> = ({ onSelectState }) => {
+  // Fallback image for broken links
+  const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
+  
   // List of popular Indian states with images
   const states: StateData[] = [
     { 
@@ -99,6 +102,10 @@ const StateSelection: React.FC<StateSelectionProps> = ({ onSelectState }) => {
                 src={state.image} 
                 alt={state.name} 
                 className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
+                onError={(e) => {
+                  console.log(`State image failed to load: ${state.image}`);
+                  (e.target as HTMLImageElement).src = fallbackImage;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-4">
