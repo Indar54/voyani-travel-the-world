@@ -13,76 +13,10 @@ import {
 } from '@/components/ui/command';
 import { TravelGroup } from './TravelGroupCard';
 
-// Sample data for search
-const searchableGroups: TravelGroup[] = [
-  {
-    id: '1',
-    title: 'Beach Getaway in Goa',
-    destination: 'Goa, India',
-    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
-    startDate: '2023-11-15',
-    endDate: '2023-11-25',
-    maxParticipants: 8,
-    currentParticipants: 5,
-    tags: ['Beach', 'Relaxation', 'Nightlife', 'Culture']
-  },
-  {
-    id: '2',
-    title: 'Spiritual Retreat in Varanasi',
-    destination: 'Varanasi, India',
-    image: 'https://images.unsplash.com/photo-1561361058-c24cecae35ca?q=80&w=800&auto=format&fit=crop',
-    startDate: '2023-12-05',
-    endDate: '2023-12-15',
-    maxParticipants: 6,
-    currentParticipants: 3,
-    tags: ['Spiritual', 'Culture', 'History', 'Ganges']
-  },
-  {
-    id: '3',
-    title: 'Hiking in Manali',
-    destination: 'Manali, India',
-    image: 'https://images.unsplash.com/photo-1621561101499-83a06783bd59?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-01-10',
-    endDate: '2024-01-18',
-    maxParticipants: 10,
-    currentParticipants: 6,
-    tags: ['Hiking', 'Mountains', 'Adventure', 'Nature']
-  },
-  {
-    id: '4',
-    title: 'Wildlife Safari in Ranthambore',
-    destination: 'Rajasthan, India',
-    image: 'https://images.unsplash.com/photo-1615031644648-282022864623?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-02-01',
-    endDate: '2024-02-10',
-    maxParticipants: 12,
-    currentParticipants: 8,
-    tags: ['Wildlife', 'Safari', 'Photography', 'Nature']
-  },
-  {
-    id: '5',
-    title: 'Historical Tour of Delhi',
-    destination: 'Delhi, India',
-    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-03-15',
-    endDate: '2024-03-25',
-    maxParticipants: 8,
-    currentParticipants: 2,
-    tags: ['History', 'Culture', 'Architecture', 'Food']
-  },
-  {
-    id: '6',
-    title: 'Backwaters of Kerala',
-    destination: 'Kerala, India',
-    image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-01-20',
-    endDate: '2024-01-28',
-    maxParticipants: 6,
-    currentParticipants: 4,
-    tags: ['Backwaters', 'Relaxation', 'Nature', 'Cuisine']
-  }
-];
+// Fallback image for broken links
+const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
 
+// Example state list - should be replaced with API data in production
 const states = [
   'Rajasthan',
   'Kerala',
@@ -91,38 +25,18 @@ const states = [
   'Tamil Nadu',
   'Maharashtra',
   'Karnataka',
-  'Gujarat',
-  'Uttarakhand',
-  'Uttar Pradesh',
-  'West Bengal',
-  'Assam',
-  'Bihar',
-  'Madhya Pradesh',
-  'Odisha',
-  'Andhra Pradesh',
-  'Telangana',
-  'Jharkhand',
-  'Chhattisgarh',
-  'Jammu & Kashmir'
+  'Gujarat'
 ];
 
+// Example world destinations - should be replaced with API data in production
 const worldDestinations = [
   'France',
   'Italy',
   'Japan',
   'Thailand',
   'USA',
-  'Australia',
-  'Brazil',
-  'Greece',
-  'Spain',
-  'United Kingdom',
-  'South Africa',
-  'Egypt'
+  'Australia'
 ];
-
-// Fallback image for broken links
-const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
 
 interface CommandSearchProps {
   open: boolean;
@@ -132,6 +46,14 @@ interface CommandSearchProps {
 const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [travelGroups, setTravelGroups] = useState<TravelGroup[]>([]);
+
+  // In a real app, this would fetch from an API
+  useEffect(() => {
+    // This would be replaced with an actual API call in production
+    console.log("Search component mounted");
+    // setTravelGroups(fetchedGroups)
+  }, []);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -160,40 +82,42 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         
-        <CommandGroup heading="Travel Groups">
-          {searchableGroups
-            .filter(group => 
-              group.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-              group.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              group.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-            )
-            .map(group => (
-              <CommandItem 
-                key={group.id} 
-                onSelect={() => handleSelect(`/group/${group.id}`)}
-                className="flex items-center gap-2 py-2"
-              >
-                <div className="h-8 w-8 rounded overflow-hidden">
-                  <img 
-                    src={group.image} 
-                    alt={group.title} 
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      console.log(`Group image failed to load: ${group.image}`);
-                      (e.target as HTMLImageElement).src = fallbackImage;
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span>{group.title}</span>
-                  <span className="text-xs text-muted-foreground">{group.destination}</span>
-                </div>
-              </CommandItem>
-            ))
-          }
-        </CommandGroup>
+        {travelGroups.length > 0 && (
+          <CommandGroup heading="Travel Groups">
+            {travelGroups
+              .filter(group => 
+                group.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                group.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                group.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+              )
+              .map(group => (
+                <CommandItem 
+                  key={group.id} 
+                  onSelect={() => handleSelect(`/group/${group.id}`)}
+                  className="flex items-center gap-2 py-2"
+                >
+                  <div className="h-8 w-8 rounded overflow-hidden">
+                    <img 
+                      src={group.image} 
+                      alt={group.title} 
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        console.log(`Group image failed to load: ${group.image}`);
+                        (e.target as HTMLImageElement).src = fallbackImage;
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span>{group.title}</span>
+                    <span className="text-xs text-muted-foreground">{group.destination}</span>
+                  </div>
+                </CommandItem>
+              ))
+            }
+          </CommandGroup>
+        )}
         
-        <CommandGroup heading="States for Local Travel">
+        <CommandGroup heading="Popular Destinations in India">
           {states
             .filter(state => state.toLowerCase().includes(searchQuery.toLowerCase()))
             .map(state => (
@@ -238,9 +162,6 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
           </CommandItem>
           <CommandItem onSelect={() => handleSelect('/auth')}>
             Sign In / Register
-          </CommandItem>
-          <CommandItem onSelect={() => handleSelect('/local-travel')}>
-            Local & International Travel
           </CommandItem>
         </CommandGroup>
       </CommandList>

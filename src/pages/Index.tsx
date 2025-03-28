@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import Hero from '@/components/Hero';
 import FeaturedGroups from '@/components/FeaturedGroups';
 import { Button } from '@/components/ui/button';
-import { Globe, Users, Calendar, ArrowRight, Heart } from 'lucide-react';
+import { Globe, Users, Calendar, ArrowRight, Heart, MessageCircle } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -20,17 +20,17 @@ const Index = () => {
               <div className="lg:col-span-1 flex flex-col justify-center">
                 <div className="animate-fade-in">
                   <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-                    Why Travel With Voyani?
+                    A Social Network for Real-World Connections
                   </h2>
                   <p className="mt-4 text-lg text-muted-foreground">
-                    Join our growing community of travelers who've discovered
-                    the joy of shared adventures and meaningful connections.
+                    In today's digitally isolated world, Voyani helps you break free from endless scrolling 
+                    and rediscover the joy of authentic human connections through shared travel experiences.
                   </p>
                   <Button 
                     className="mt-6 hover-lift"
                     size="lg"
                   >
-                    Start Your Journey
+                    Join Our Community
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -40,23 +40,23 @@ const Index = () => {
                 {[
                   {
                     icon: Globe,
-                    title: "Discover New Places",
-                    description: "Find trips to destinations you've always wanted to visit or discover new hidden gems suggested by locals."
+                    title: "Personalized Recommendations",
+                    description: "Our intelligent matching system connects you with trips and travelers that match your interests and travel style."
                   },
                   {
                     icon: Users,
-                    title: "Meet Like-minded Travelers",
-                    description: "Connect with people who share your interests, travel style, and sense of adventure."
+                    title: "Meaningful Social Connections",
+                    description: "Form genuine friendships with people who share your passion for exploration and authentic experiences."
                   },
                   {
-                    icon: Calendar,
-                    title: "Flexible Travel Planning",
-                    description: "Join existing trips or create your own. Travel when and how you want, with people you'll enjoy."
+                    icon: MessageCircle,
+                    title: "Community Support",
+                    description: "Exchange travel tips, cultural insights, and personal experiences with a supportive community of fellow travelers."
                   },
                   {
                     icon: Heart,
-                    title: "Safe & Trusted Community",
-                    description: "Our verification system and review process ensures a respectful, reliable travel community."
+                    title: "Mental Wellbeing",
+                    description: "Combat social isolation through real-world connections that improve mental health and overall life satisfaction."
                   }
                 ].map((feature, index) => (
                   <div 
@@ -80,10 +80,11 @@ const Index = () => {
           <div className="container mx-auto px-4 py-16">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl animate-fade-in">
-                Ready to find your next travel companion?
+                Rediscover human connection in a digital age
               </h2>
               <p className="mt-4 text-lg text-gray-600 animate-fade-in animate-delay-100">
-                Join Voyani today and start connecting with fellow adventurers from around the world.
+                In an era of increasing social isolation, Voyani helps you build meaningful relationships through 
+                shared travel experiences. Join our community and make connections that matter.
               </p>
               <div className="mt-8 flex justify-center gap-4 animate-fade-in animate-delay-200">
                 <Button size="lg" className="hover-lift">

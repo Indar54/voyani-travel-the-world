@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, MapPin, Users, Calendar, Navigation } from 'lucide-react';
+import { ArrowRight, Users, Calendar, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Hero: React.FC = () => {
@@ -17,18 +17,19 @@ const Hero: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-500"></span>
               </span>
-              Discover Travel Companions For Your Next Adventure
+              Connect With Like-minded Travelers
             </span>
           </div>
           
           <h1 className="text-4xl font-bold tracking-tight text-gray-100 sm:text-5xl md:text-6xl animate-fade-in text-balance">
             <span className="block">Travel Together,</span>
-            <span className="block text-white">Create Memories</span>
+            <span className="block text-white">Socialize Meaningfully</span>
           </h1>
           
           <p className="mt-6 text-lg leading-8 text-gray-300 animate-fade-in animate-delay-100 text-balance">
-            Connect with like-minded travelers, join exciting group trips, and explore the world in good company. 
-            Whether you're looking for adventure buddies or planning your own journey, Voyani makes group travel simple.
+            Voyani is more than just travel - it's a genuine social platform that helps people connect in 
+            an increasingly isolated world. Find meaningful connections, create lifelong friendships, and 
+            rediscover the joy of real-world social interactions.
           </p>
           
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-4 animate-fade-in animate-delay-200">
@@ -48,22 +49,13 @@ const Hero: React.FC = () => {
             >
               Create a Trip
             </Button>
-            <Button 
-              variant="secondary" 
-              size="lg" 
-              className="text-md px-6 py-6 hover-lift"
-              onClick={() => navigate('/local-travel')}
-            >
-              Local Travel Plans
-              <Navigation className="ml-2 h-5 w-5" />
-            </Button>
           </div>
           
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
-              { icon: MapPin, title: "Worldwide Destinations", description: "Connect with travelers heading anywhere in the world" },
-              { icon: Users, title: "Verified Travelers", description: "Safe travels with our community verification system" },
-              { icon: Calendar, title: "Flexible Planning", description: "Find trips that match your schedule and interests" }
+              { icon: Globe, title: "Authentic Connections", description: "Move beyond superficial online interactions to forge genuine relationships" },
+              { icon: Users, title: "Community First", description: "A verified community of real travelers who value meaningful social experiences" },
+              { icon: Calendar, title: "Real-world Social Network", description: "Combat digital isolation by facilitating face-to-face interactions through travel" }
             ].map((feature, index) => (
               <div 
                 key={index} 

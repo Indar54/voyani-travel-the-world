@@ -16,13 +16,21 @@ import LocalTravel from "./pages/LocalTravel";
 // Force dark mode
 document.documentElement.classList.add('dark');
 
-const queryClient = new QueryClient();
+// Create a client with production-ready settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner position="top-right" closeButton />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

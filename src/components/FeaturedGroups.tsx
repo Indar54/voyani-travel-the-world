@@ -5,40 +5,40 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Sample data
+// Sample data - in production this would come from an API
 const featuredGroups: TravelGroup[] = [
   {
     id: '1',
-    title: 'Beach Getaway in Goa',
-    destination: 'Goa, India',
-    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
+    title: 'Cultural Tour in Rajasthan',
+    destination: 'Rajasthan, India',
+    image: 'https://images.unsplash.com/photo-1477587458883-47145ed94245?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-11-15',
     endDate: '2023-11-25',
     maxParticipants: 8,
-    currentParticipants: 5,
-    tags: ['Beach', 'Relaxation', 'Nightlife', 'Culture']
+    currentParticipants: 2,
+    tags: ['Culture', 'Heritage', 'Photography']
   },
   {
     id: '2',
-    title: 'Temple Tour in Madurai',
-    destination: 'Tamil Nadu, India',
-    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=800&auto=format&fit=crop',
+    title: 'Backwaters of Kerala',
+    destination: 'Kerala, India',
+    image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=800&auto=format&fit=crop',
     startDate: '2023-12-05',
     endDate: '2023-12-15',
     maxParticipants: 6,
-    currentParticipants: 3,
-    tags: ['Temple', 'Architecture', 'Spirituality', 'Food']
+    currentParticipants: 1,
+    tags: ['Nature', 'Relaxation', 'Boating']
   },
   {
     id: '3',
-    title: 'Trekking in Himachal',
+    title: 'Himalayan Adventure',
     destination: 'Himachal Pradesh, India',
-    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1593181629936-11c609b8db9b?q=80&w=800&auto=format&fit=crop',
     startDate: '2024-01-10',
     endDate: '2024-01-18',
     maxParticipants: 10,
-    currentParticipants: 6,
-    tags: ['Trekking', 'Mountains', 'Adventure', 'Nature']
+    currentParticipants: 3,
+    tags: ['Adventure', 'Mountains', 'Trekking']
   }
 ];
 
@@ -50,9 +50,9 @@ const FeaturedGroups: React.FC = () => {
       <div className="container mx-auto">
         <div className="flex justify-between items-end mb-10">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Featured Travel Groups</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Recommended Trips</h2>
             <p className="mt-2 text-muted-foreground max-w-2xl">
-              Join these popular trips planned by our community members
+              Connect with other travelers and create meaningful relationships through these shared journeys
             </p>
           </div>
           <Button 
