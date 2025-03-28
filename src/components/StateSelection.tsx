@@ -23,7 +23,7 @@ const StateSelection: React.FC<StateSelectionProps> = ({ onSelectState, isWorldD
   const indianStates: RegionData[] = [
     { 
       name: 'Rajasthan', 
-      image: 'https://images.unsplash.com/photo-1599661046827-9a64bd68328d?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1631867675167-90a456a90863?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fHJhamFzdGhhbnxlbnwwfHwwfHx8MA%3D%3D',
       destinations: 24
     },
     { 
@@ -78,17 +78,17 @@ const StateSelection: React.FC<StateSelectionProps> = ({ onSelectState, isWorldD
     },
     { 
       name: 'Assam', 
-      image: 'https://images.unsplash.com/photo-1605177297800-fc53c10f6933?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1626516008114-7dd309103a35?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGFzc2FtfGVufDB8fDB8fHww',
       destinations: 12
     },
     { 
       name: 'Bihar', 
-      image: 'https://images.unsplash.com/photo-1588413453099-354bd4402a6e?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1631984876480-f821262c2609?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8YmloYXJ8ZW58MHx8MHx8fDA%3D',
       destinations: 10
     },
     { 
       name: 'Madhya Pradesh', 
-      image: 'https://images.unsplash.com/photo-1595930266007-4bb2f45a6b32?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1608181017892-cc4a542570d5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fG1hZGh5YSUyMHByYWRlc2h8ZW58MHx8MHx8fDA%3D',
       destinations: 18
     },
     { 
@@ -98,27 +98,27 @@ const StateSelection: React.FC<StateSelectionProps> = ({ onSelectState, isWorldD
     },
     { 
       name: 'Andhra Pradesh', 
-      image: 'https://images.unsplash.com/photo-1621257622218-489944815a2d?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1572333837703-3f5d7a24c714?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       destinations: 16
     },
     { 
       name: 'Telangana', 
-      image: 'https://images.unsplash.com/photo-1580373050759-86681b0b9d68?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1621909321963-2276c9660298?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8dGVsYW5nYW5hfGVufDB8fDB8fHww',
       destinations: 12
     },
     { 
       name: 'Jharkhand', 
-      image: 'https://images.unsplash.com/photo-1588182469473-76dfa853889d?q=80&w=800&auto=format&fit=crop',
+      image: 'https://media.istockphoto.com/id/1415368447/photo/patratu-valley-with-lush-greenery-and-scenic-views-of-hills-located-in-patratu-ranchi.jpg?s=612x612&w=0&k=20&c=DI61h0tsvXnbWuoeZTpMrB70ELM9iu_h2oJsRxawa4U=',
       destinations: 8
     },
     { 
       name: 'Chhattisgarh', 
-      image: 'https://images.unsplash.com/photo-1626855222163-9466f76df8ce?q=80&w=800&auto=format&fit=crop',
+      image: 'https://plus.unsplash.com/premium_photo-1691031429475-a18a2c89d83c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Y2hhdHRpc2dhcmh8ZW58MHx8MHx8fDA%3D',
       destinations: 9
     },
     { 
       name: 'Jammu & Kashmir', 
-      image: 'https://images.unsplash.com/photo-1573538673531-c0970ce6ad4f?q=80&w=800&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8amFtbXUlMjBhbmQlMjBrYXNobWlyfGVufDB8fDB8fHww',
       destinations: 21
     }
   ];
