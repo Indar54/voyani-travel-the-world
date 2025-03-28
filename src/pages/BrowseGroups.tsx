@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import TravelGroupCard, { TravelGroup } from '@/components/TravelGroupCard';
+import TravelGroupCard from '@/components/TravelGroupCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -11,89 +11,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Filter, X, Calendar, Users, MapPin } from 'lucide-react';
-
-// Sample data
-const allGroups: TravelGroup[] = [
-  {
-    id: '1',
-    title: 'Beach Getaway in Goa',
-    destination: 'Goa, India',
-    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
-    startDate: '2023-11-15',
-    endDate: '2023-11-25',
-    maxParticipants: 8,
-    currentParticipants: 5,
-    tags: ['Beach', 'Relaxation', 'Nightlife', 'Culture']
-  },
-  {
-    id: '2',
-    title: 'Temple Tour in Madurai',
-    destination: 'Tamil Nadu, India',
-    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=800&auto=format&fit=crop',
-    startDate: '2023-12-05',
-    endDate: '2023-12-15',
-    maxParticipants: 6,
-    currentParticipants: 3,
-    tags: ['Temple', 'Architecture', 'Spirituality', 'Food']
-  },
-  {
-    id: '3',
-    title: 'Trekking in Himachal',
-    destination: 'Himachal Pradesh, India',
-    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-01-10',
-    endDate: '2024-01-18',
-    maxParticipants: 10,
-    currentParticipants: 6,
-    tags: ['Trekking', 'Mountains', 'Adventure', 'Nature']
-  },
-  {
-    id: '4',
-    title: 'Wildlife Safari in Ranthambore',
-    destination: 'Rajasthan, India',
-    image: 'https://images.unsplash.com/photo-1615031644648-282022864623?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-02-01',
-    endDate: '2024-02-10',
-    maxParticipants: 12,
-    currentParticipants: 8,
-    tags: ['Wildlife', 'Safari', 'Photography', 'Nature']
-  },
-  {
-    id: '5',
-    title: 'Heritage Walk in Delhi',
-    destination: 'Delhi, India',
-    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-03-15',
-    endDate: '2024-03-25',
-    maxParticipants: 8,
-    currentParticipants: 2,
-    tags: ['History', 'Culture', 'Architecture', 'Food']
-  },
-  {
-    id: '6',
-    title: 'Backwaters of Kerala',
-    destination: 'Kerala, India',
-    image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=800&auto=format&fit=crop',
-    startDate: '2024-01-20',
-    endDate: '2024-01-28',
-    maxParticipants: 6,
-    currentParticipants: 4,
-    tags: ['Backwaters', 'Relaxation', 'Nature', 'Cuisine']
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const BrowseGroups = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredGroups, setFilteredGroups] = useState<TravelGroup[]>(allGroups);
+  const [allGroups, setAllGroups] = useState<any[]>([]);
+  const [filteredGroups, setFilteredGroups] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<string>("any");
   const [destination, setDestination] = useState<string>("any");
   const [duration, setDuration] = useState<number[]>([7]);
   const [groupSize, setGroupSize] = useState<string>("any");
   
-  // All unique tags from groups
-  const allTags = [...new Set(allGroups.flatMap(group => group.tags))].sort();
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        // Fetch all travel groups with their tags
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('travel_groups')
+          .select(`
+            *,
+            creator:profiles(username, avatar_url),
+            tags:group_tags(tag),
+            members:group_members(profile_id, status)
+          `)
+          .order('created_at', { ascending: false });
+          
+        if (groupsError) throw groupsError;
+        
+        if (groupsData) {
+          // Transform tags array from objects to strings
+          const formattedGroups = groupsData.map(group => ({
+            ...group,
+            id: group.id,
+            title: group.title,
+            destination: group.destination,
+            image: group.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
+            startDate: group.start_date,
+            endDate: group.end_date,
+            maxParticipants: group.max_participants,
+            currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
+            tags: group.tags.map((t: any) => t.tag),
+          }));
+          
+          setAllGroups(formattedGroups);
+          setFilteredGroups(formattedGroups);
+          
+          // Extract all unique tags
+          const tagsSet = new Set<string>();
+          formattedGroups.forEach(group => {
+            group.tags.forEach((tag: string) => tagsSet.add(tag));
+          });
+          setAllTags(Array.from(tagsSet).sort());
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+        toast.error('Failed to load travel groups');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchGroups();
+  }, []);
   
   const handleTagToggle = (tag: string) => {
     setSelectedTags(prevTags => 
@@ -118,7 +102,7 @@ const BrowseGroups = () => {
         group => 
           group.title.toLowerCase().includes(term) || 
           group.destination.toLowerCase().includes(term) ||
-          group.tags.some(tag => tag.toLowerCase().includes(term))
+          group.tags.some((tag: string) => tag.toLowerCase().includes(term))
       );
     }
     
@@ -129,7 +113,7 @@ const BrowseGroups = () => {
       );
     }
     
-    // Filter by date range (if implemented)
+    // Filter by date range
     if (dateRange !== "any") {
       const now = new Date();
       const oneMonthLater = new Date(now);
@@ -358,7 +342,24 @@ const BrowseGroups = () => {
           </Card>
         )}
         
-        {filteredGroups.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, index) => (
+              <Card key={index} className="overflow-hidden animate-pulse">
+                <div className="h-48 bg-gray-300"></div>
+                <CardContent className="p-5">
+                  <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-1/2 mb-4"></div>
+                  <div className="h-4 bg-gray-300 rounded w-full mb-4"></div>
+                  <div className="flex space-x-2">
+                    <div className="h-6 bg-gray-300 rounded w-16"></div>
+                    <div className="h-6 bg-gray-300 rounded w-16"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredGroups.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGroups.map((group, index) => (
               <div key={group.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
