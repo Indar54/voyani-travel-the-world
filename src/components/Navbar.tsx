@@ -74,7 +74,7 @@ const Navbar: React.FC = () => {
               <NavLink to="/">Home</NavLink>
               <NavLink to="/browse">Explore</NavLink>
               <NavLink to="/create-group">Create Group</NavLink>
-              <NavLink to="/local-travel">Local Travel</NavLink>
+              <NavLink to="/local-travel">Destinations</NavLink>
             </nav>
             
             <div className="flex items-center space-x-4">
