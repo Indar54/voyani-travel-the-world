@@ -5,12 +5,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Edit, Calendar, Star, Shield, Globe, Flag, Users } from 'lucide-react';
+import { Tables } from '@/integrations/supabase/types';
 
 interface ProfileSectionProps {
   isOwnProfile?: boolean;
+  profile?: Tables<'profiles'> | null;
 }
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, profile = null }) => {
+  const fullName = profile?.full_name || 'Jessica Doe';
+  const location = profile?.location || 'San Francisco, USA';
+  const bio = profile?.bio || 'Adventure enthusiast and nature lover. I enjoy hiking, photography, and experiencing different cultures. Always looking for my next travel companion!';
+  const avatarUrl = profile?.avatar_url;
+  const username = profile?.username;
+  const userInitials = fullName ? `${fullName.charAt(0)}${fullName.split(' ')[1]?.charAt(0) || ''}` : 'JD';
+
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -19,14 +28,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true }) 
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center mb-6">
                 <Avatar className="h-24 w-24 mb-4">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl} alt={fullName} />
+                  ) : null}
                   <AvatarFallback className="bg-voyani-100 text-voyani-700 text-2xl">
-                    JD
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <h2 className="text-2xl font-bold">Jessica Doe</h2>
+                <h2 className="text-2xl font-bold">{fullName}</h2>
                 <div className="flex items-center text-muted-foreground mt-1">
                   <MapPin className="h-4 w-4 mr-1" />
-                  <span>San Francisco, USA</span>
+                  <span>{location}</span>
                 </div>
                 <div className="flex items-center mt-3">
                   <Badge className="bg-voyani-100 text-voyani-800 border-0 mr-2">
@@ -51,8 +63,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true }) 
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">About</h3>
                   <p className="text-sm">
-                    Adventure enthusiast and nature lover. I enjoy hiking, photography, and experiencing different cultures.
-                    Always looking for my next travel companion!
+                    {bio}
                   </p>
                 </div>
                 
@@ -89,7 +100,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true }) 
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Member Since</h3>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">October 2022</span>
+                    <span className="text-sm">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'October 2022'}</span>
                   </div>
                 </div>
               </div>
