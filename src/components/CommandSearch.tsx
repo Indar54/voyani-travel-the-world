@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Globe } from 'lucide-react';
 import {
   CommandDialog,
   CommandInput,
@@ -9,6 +9,7 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
+  CommandSeparator,
 } from '@/components/ui/command';
 import { TravelGroup } from './TravelGroupCard';
 
@@ -94,8 +95,34 @@ const states = [
   'Uttarakhand',
   'Uttar Pradesh',
   'West Bengal',
-  'Assam'
+  'Assam',
+  'Bihar',
+  'Madhya Pradesh',
+  'Odisha',
+  'Andhra Pradesh',
+  'Telangana',
+  'Jharkhand',
+  'Chhattisgarh',
+  'Jammu & Kashmir'
 ];
+
+const worldDestinations = [
+  'France',
+  'Italy',
+  'Japan',
+  'Thailand',
+  'USA',
+  'Australia',
+  'Brazil',
+  'Greece',
+  'Spain',
+  'United Kingdom',
+  'South Africa',
+  'Egypt'
+];
+
+// Fallback image for broken links
+const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
 
 interface CommandSearchProps {
   open: boolean;
@@ -151,6 +178,10 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
                     src={group.image} 
                     alt={group.title} 
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      console.log(`Group image failed to load: ${group.image}`);
+                      (e.target as HTMLImageElement).src = fallbackImage;
+                    }}
                   />
                 </div>
                 <div className="flex flex-col">
@@ -177,6 +208,26 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
             ))
           }
         </CommandGroup>
+
+        <CommandSeparator />
+        
+        <CommandGroup heading="International Destinations">
+          {worldDestinations
+            .filter(country => country.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map(country => (
+              <CommandItem 
+                key={country} 
+                onSelect={() => navigate('/local-travel', { 
+                  state: { isInternational: true } 
+                })}
+                className="flex items-center gap-2"
+              >
+                <Globe className="h-4 w-4" />
+                <span>{country}</span>
+              </CommandItem>
+            ))
+          }
+        </CommandGroup>
         
         <CommandGroup heading="Quick Links">
           <CommandItem onSelect={() => handleSelect('/browse')}>
@@ -187,6 +238,9 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
           </CommandItem>
           <CommandItem onSelect={() => handleSelect('/auth')}>
             Sign In / Register
+          </CommandItem>
+          <CommandItem onSelect={() => handleSelect('/local-travel')}>
+            Local & International Travel
           </CommandItem>
         </CommandGroup>
       </CommandList>
