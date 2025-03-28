@@ -11,6 +11,9 @@ import BrowseGroups from "./pages/BrowseGroups";
 import CreateGroup from "./pages/CreateGroup";
 import GroupDetails from "./pages/GroupDetails";
 import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
+import Messages from "./pages/Messages";
+import UserSearch from "./pages/UserSearch";
 import NotFound from "./pages/NotFound";
 import LocalTravel from "./pages/LocalTravel";
 
@@ -37,10 +40,13 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/browse" element={<BrowseGroups />} />
             <Route path="/create-group" element={<CreateGroup />} />
             <Route path="/group/:id" element={<GroupDetails />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/users" element={<UserSearch />} />
             <Route path="/local-travel" element={<LocalTravel />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

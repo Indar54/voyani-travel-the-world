@@ -29,11 +29,11 @@ const signUpSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, isLoading, session } = useAuth();
+  const { signIn, signUp, signInWithProvider, isLoading, session } = useAuth();
   
   useEffect(() => {
     if (session) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [session, navigate]);
   
@@ -69,9 +69,9 @@ const Auth = () => {
       console.error('Sign up error:', error);
     }
   };
-
-  const handleSocialSignIn = (provider: string) => {
-    toast.info(`Social login with ${provider} is not implemented yet`);
+  
+  const handleSocialSignIn = (provider: 'google' | 'apple') => {
+    signInWithProvider(provider);
   };
   
   return (
@@ -249,7 +249,7 @@ const Auth = () => {
               <Button 
                 variant="outline" 
                 className="hover-lift flex items-center justify-center gap-2"
-                onClick={() => handleSocialSignIn('Google')}
+                onClick={() => handleSocialSignIn('google')}
                 disabled={isLoading}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5">
@@ -275,7 +275,7 @@ const Auth = () => {
               <Button 
                 variant="outline" 
                 className="hover-lift flex items-center justify-center gap-2"
-                onClick={() => handleSocialSignIn('Apple')}
+                onClick={() => handleSocialSignIn('apple')}
                 disabled={isLoading}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5">

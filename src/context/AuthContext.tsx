@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -13,6 +13,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithProvider: (provider: Provider) => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
 
@@ -96,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success('Signed in successfully!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -124,11 +125,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success('Account created successfully!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Sign up error:', error);
       throw error;
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithProvider = async (provider: Provider) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Sign in with ${provider} error:`, error);
+      toast.error(`Failed to sign in with ${provider}`);
       setIsLoading(false);
     }
   };
@@ -162,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn, 
       signUp, 
       signOut,
+      signInWithProvider,
       refreshProfile
     }}>
       {children}
