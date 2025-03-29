@@ -100,7 +100,7 @@ export const ChatController = {
         p_sender_id: userId,
         p_content: content
       });
-        
+      
       if (error) {
         console.error('RPC Error sending message:', error);
         

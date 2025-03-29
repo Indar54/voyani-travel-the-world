@@ -1,7 +1,7 @@
 
 import { Database } from '@/integrations/supabase/types';
 
-// Type extension for the group_messages table
+// Type extension for the Group_Messages table
 export interface GroupMessagesTable {
   Row: {
     id: string;

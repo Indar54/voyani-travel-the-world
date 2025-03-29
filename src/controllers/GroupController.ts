@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Tables } from '@/integrations/supabase/types';
+import { ExtendedTables } from '@/utils/database-types';
 
 export interface GroupMember {
   id: string;
@@ -15,7 +16,7 @@ export interface GroupMember {
   joined_at: string;
 }
 
-export interface GroupWithMembers extends Tables<'travel_groups'> {
+export interface GroupWithMembers extends ExtendedTables<'travel_groups'> {
   members: GroupMember[];
   creator: {
     id: string;
@@ -155,14 +156,14 @@ export const GroupController = {
       };
       
       // Get the count of members using proper count method
-      const { count, error: countError } = await supabase
+      const countResponse = await supabase
         .from('group_members')
         .select('*', { count: 'exact', head: true })
         .eq('travel_group_id', groupId);
         
-      if (countError) throw countError;
+      if (countResponse.error) throw countResponse.error;
       
-      groupMembers.count = count || 0;
+      groupMembers.count = countResponse.count || 0;
 
       return groupMembers;
     } catch (error) {
