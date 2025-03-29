@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
@@ -443,12 +442,13 @@ export const GroupController = {
       if (leaveError) throw leaveError;
 
       // Update participant count
-      const { error: updateError } = await supabase
+      const { data: updateResult, error: updateError } = await supabase
         .from('travel_groups')
         .update({
           current_participants: supabase.rpc('decrement', { x: 1 })
         })
-        .eq('id', groupId);
+        .eq('id', groupId)
+        .select('current_participants');
 
       if (updateError) {
         console.error('Error updating participant count:', updateError);
@@ -498,19 +498,20 @@ export const GroupController = {
 
       if (approveError) throw approveError;
 
-      // Update participant count using the count method
-      const { error: updateError } = await supabase
+      // Update participant count
+      const { data: updateResult, error: updateError } = await supabase
         .from('travel_groups')
         .update({
           current_participants: supabase.rpc('increment', { x: 1 })
         })
-        .eq('id', groupId);
+        .eq('id', groupId)
+        .select('current_participants');
 
       if (updateError) {
         console.error('Error updating participant count:', updateError);
         // Continue even if this fails
       }
-
+      
       return { success: true };
     } catch (error) {
       console.error('Error approving join request:', error);
@@ -589,13 +590,14 @@ export const GroupController = {
 
       if (removeError) throw removeError;
 
-      // Update participant count using the proper count method
-      const { error: updateError } = await supabase
+      // Update participant count
+      const { data: updateResult, error: updateError } = await supabase
         .from('travel_groups')
         .update({
           current_participants: supabase.rpc('decrement', { x: 1 })
         })
-        .eq('id', groupId);
+        .eq('id', groupId)
+        .select('current_participants');
 
       if (updateError) {
         console.error('Error updating participant count:', updateError);

@@ -39,8 +39,9 @@ export const ChatController = {
       if (error) {
         console.log('Fallback to direct query:', error);
         
-        // Use a raw SQL query to avoid type issues
-        const { data: rawData, error: queryError } = await supabase.from('group_messages')
+        // Use type assertion to avoid TypeScript errors
+        const { data: rawData, error: queryError } = await supabase
+          .from('group_messages' as any)
           .select(`
             id,
             content,
@@ -48,7 +49,7 @@ export const ChatController = {
             sender:profiles!inner(id, username, full_name, avatar_url)
           `)
           .eq('travel_group_id', groupId)
-          .order('created_at', { ascending: true }) as any;
+          .order('created_at', { ascending: true });
           
         if (queryError) {
           console.error('Error fetching group messages:', queryError);
@@ -104,12 +105,14 @@ export const ChatController = {
         console.error('RPC Error sending message:', error);
         
         // Fall back to a direct insert if RPC isn't set up
-        const { data: directData, error: directError } = await supabase.from('group_messages')
+        // Use type assertion to avoid TypeScript errors
+        const { data: directData, error: directError } = await supabase
+          .from('group_messages' as any)
           .insert({
             travel_group_id: groupId,
             sender_id: userId,
             content: content,
-          } as any)
+          })
           .select('id')
           .single();
           
@@ -169,15 +172,16 @@ export const ChatController = {
         console.error('Error checking delete permission:', fetchError);
         
         // Fallback to manual verification if RPC isn't available
-        // First get the message details
-        const { data: message, error: directFetchError } = await supabase.from('group_messages')
+        // First get the message details using type assertion
+        const { data: message, error: directFetchError } = await supabase
+          .from('group_messages' as any)
           .select(`
             id, 
             sender_id, 
             travel_group_id
           `)
           .eq('id', messageId)
-          .single() as any;
+          .single();
           
         if (directFetchError) throw directFetchError;
         
@@ -203,9 +207,10 @@ export const ChatController = {
       }
       
       // Delete the message using a direct delete operation with type assertion
-      const { error: deleteError } = await supabase.from('group_messages')
+      const { error: deleteError } = await supabase
+        .from('group_messages' as any)
         .delete()
-        .eq('id', messageId) as any;
+        .eq('id', messageId);
         
       if (deleteError) throw deleteError;
       
