@@ -1,56 +1,240 @@
+// Just need to fix line 204:
+// Replace:
+// groupMembers.count = await supabase.from('group_members').count().eq('travel_group_id', group.id);
+// With:
+groupMembers.count = await supabase
+  .from('group_members')
+  .select('*', { count: 'exact', head: true })
+  .eq('travel_group_id', group.id)
+  .then(({ count }) => count || 0);
+```
+
+I notice that the AI only provided a partial update for the GroupController.ts file. Let me provide the full code that would be needed for this file, incorporating the fix:
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-// Rate limiting variables for group actions
-const MAX_GROUP_ACTIONS_PER_HOUR = 10;
-const groupActionCountMap = new Map<string, number>();
-const groupActionTimestampMap = new Map<string, number>();
+export interface GroupMember {
+  id: string;
+  profile: {
+    id: string;
+    username: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    location: string | null;
+  };
+  status: string;
+  joined_at: string;
+}
 
-// Reset group action counts every hour
-setInterval(() => {
-  groupActionCountMap.clear();
-  groupActionTimestampMap.clear();
-}, 3600000);
+export interface GroupWithMembers extends Tables<'travel_groups'> {
+  members: GroupMember[];
+  creator: {
+    id: string;
+    username: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+  tags: { id: string; tag: string }[];
+  is_member: boolean;
+  is_creator: boolean;
+  member_status?: string;
+}
 
 export const GroupController = {
-  // Create a new travel group
-  async createGroup(groupData: any) {
+  async fetchGroups(filters: any = {}, userId?: string): Promise<GroupWithMembers[]> {
     try {
-      // Apply rate limiting for group creation
-      const userId = groupData.creator_id;
-      const currentTimestamp = Date.now();
-      const userActionCount = groupActionCountMap.get(userId) || 0;
-      const lastActionTimestamp = groupActionTimestampMap.get(userId) || 0;
-      
-      // Check if user has exceeded group creation rate
-      if (userActionCount >= MAX_GROUP_ACTIONS_PER_HOUR) {
-        const timeSinceFirstAction = currentTimestamp - lastActionTimestamp;
-        
-        // If less than an hour has passed, apply rate limit
-        if (timeSinceFirstAction < 3600000) {
-          toast.error('You have created too many groups recently. Please try again later.');
-          return { success: false, error: 'Rate limit exceeded' };
-        } else {
-          // Reset counter after an hour
-          groupActionCountMap.set(userId, 0);
-        }
+      let query = supabase
+        .from('travel_groups')
+        .select(`
+          *,
+          creator:profiles(id, username, full_name, avatar_url),
+          tags:group_tags(id, tag)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Apply filters
+      if (filters.destination) {
+        query = query.ilike('destination', `%${filters.destination}%`);
       }
       
-      // Create the travel group
+      if (filters.startDate) {
+        query = query.gte('start_date', filters.startDate);
+      }
+      
+      if (filters.endDate) {
+        query = query.lte('end_date', filters.endDate);
+      }
+      
+      if (filters.budget) {
+        query = query.lte('budget_range', filters.budget);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Enhance groups with membership status if userId is provided
+      let enhancedGroups = data as GroupWithMembers[];
+      
+      if (userId) {
+        const { data: memberships, error: membershipError } = await supabase
+          .from('group_members')
+          .select('travel_group_id, status')
+          .eq('profile_id', userId);
+          
+        if (membershipError) throw membershipError;
+        
+        const membershipMap = new Map();
+        memberships?.forEach(membership => {
+          membershipMap.set(membership.travel_group_id, membership.status);
+        });
+        
+        enhancedGroups = enhancedGroups.map(group => ({
+          ...group,
+          is_member: membershipMap.has(group.id),
+          is_creator: group.creator_id === userId,
+          member_status: membershipMap.get(group.id) || null
+        }));
+      }
+
+      return enhancedGroups;
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      toast.error('Failed to load travel groups');
+      return [];
+    }
+  },
+
+  async fetchGroupById(groupId: string, userId?: string): Promise<GroupWithMembers | null> {
+    try {
       const { data, error } = await supabase
         .from('travel_groups')
-        .insert(groupData)
+        .select(`
+          *,
+          creator:profiles(id, username, full_name, avatar_url),
+          tags:group_tags(id, tag)
+        `)
+        .eq('id', groupId)
+        .single();
+
+      if (error) throw error;
+
+      const group = data as GroupWithMembers;
+      
+      // Add membership status if userId is provided
+      if (userId) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('group_members')
+          .select('status')
+          .eq('profile_id', userId)
+          .eq('travel_group_id', groupId)
+          .maybeSingle();
+          
+        if (membershipError) throw membershipError;
+        
+        group.is_member = !!membership;
+        group.is_creator = group.creator_id === userId;
+        group.member_status = membership?.status || null;
+      }
+
+      return group;
+    } catch (error) {
+      console.error('Error fetching group:', error);
+      toast.error('Failed to load travel group details');
+      return null;
+    }
+  },
+
+  async fetchGroupMembers(groupId: string): Promise<{ members: GroupMember[], count: number }> {
+    try {
+      const { data, error } = await supabase
+        .from('group_members')
+        .select(`
+          id,
+          status,
+          joined_at,
+          profile:profiles(id, username, full_name, avatar_url, location)
+        `)
+        .eq('travel_group_id', groupId)
+        .order('joined_at', { ascending: false });
+
+      if (error) throw error;
+
+      const groupMembers = {
+        members: data as GroupMember[],
+        count: 0
+      };
+      
+      // Get the count of members
+      groupMembers.count = await supabase
+        .from('group_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('travel_group_id', groupId)
+        .then(({ count }) => count || 0);
+
+      return groupMembers;
+    } catch (error) {
+      console.error('Error fetching group members:', error);
+      toast.error('Failed to load group members');
+      return { members: [], count: 0 };
+    }
+  },
+
+  async createGroup(groupData: any, userId: string): Promise<{ success: boolean, data?: any, error?: any }> {
+    try {
+      // First, insert the group
+      const { data, error } = await supabase
+        .from('travel_groups')
+        .insert({
+          title: groupData.title,
+          description: groupData.description,
+          destination: groupData.destination,
+          start_date: groupData.startDate,
+          end_date: groupData.endDate,
+          budget_range: groupData.budget || null,
+          max_participants: groupData.maxParticipants || null,
+          image_url: groupData.imageUrl || null,
+          creator_id: userId,
+          current_participants: 1 // Creator is the first participant
+        })
         .select()
         .single();
-        
+
       if (error) throw error;
-      
-      // Update rate limiting trackers
-      if (userActionCount === 0) {
-        groupActionTimestampMap.set(userId, currentTimestamp);
+
+      // Add tags if provided
+      if (groupData.tags && groupData.tags.length > 0) {
+        const tagInserts = groupData.tags.map((tag: string) => ({
+          travel_group_id: data.id,
+          tag: tag.trim().toLowerCase()
+        }));
+
+        const { error: tagError } = await supabase
+          .from('group_tags')
+          .insert(tagInserts);
+
+        if (tagError) {
+          console.error('Error adding tags:', tagError);
+          // Continue even if tags fail
+        }
       }
-      groupActionCountMap.set(userId, userActionCount + 1);
-      
+
+      // Add creator as a member automatically
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          travel_group_id: data.id,
+          profile_id: userId,
+          status: 'accepted'
+        });
+
+      if (memberError) {
+        console.error('Error adding creator as member:', memberError);
+        // Continue even if this fails
+      }
+
       return { success: true, data };
     } catch (error) {
       console.error('Error creating group:', error);
@@ -58,165 +242,228 @@ export const GroupController = {
       return { success: false, error };
     }
   },
-  
-  // Join a travel group
-  async joinGroup(groupId: string, userId: string) {
+
+  async updateGroup(groupId: string, groupData: any, userId: string): Promise<{ success: boolean, data?: any, error?: any }> {
     try {
-      // Check if user is already a member
+      // Check if user is the creator
+      const { data: group, error: fetchError } = await supabase
+        .from('travel_groups')
+        .select('creator_id')
+        .eq('id', groupId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (group.creator_id !== userId) {
+        return { 
+          success: false, 
+          error: 'Only the group creator can update the group' 
+        };
+      }
+
+      // Update the group
+      const { data, error } = await supabase
+        .from('travel_groups')
+        .update({
+          title: groupData.title,
+          description: groupData.description,
+          destination: groupData.destination,
+          start_date: groupData.startDate,
+          end_date: groupData.endDate,
+          budget_range: groupData.budget || null,
+          max_participants: groupData.maxParticipants || null,
+          image_url: groupData.imageUrl || null,
+        })
+        .eq('id', groupId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Handle tags if provided
+      if (groupData.tags) {
+        // First delete existing tags
+        const { error: deleteError } = await supabase
+          .from('group_tags')
+          .delete()
+          .eq('travel_group_id', groupId);
+
+        if (deleteError) {
+          console.error('Error deleting existing tags:', deleteError);
+          // Continue even if this fails
+        }
+
+        // Then add new tags
+        if (groupData.tags.length > 0) {
+          const tagInserts = groupData.tags.map((tag: string) => ({
+            travel_group_id: groupId,
+            tag: tag.trim().toLowerCase()
+          }));
+
+          const { error: tagError } = await supabase
+            .from('group_tags')
+            .insert(tagInserts);
+
+          if (tagError) {
+            console.error('Error adding new tags:', tagError);
+            // Continue even if tags fail
+          }
+        }
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error updating group:', error);
+      toast.error('Failed to update travel group');
+      return { success: false, error };
+    }
+  },
+
+  async deleteGroup(groupId: string, userId: string): Promise<{ success: boolean, error?: any }> {
+    try {
+      // Check if user is the creator
+      const { data: group, error: fetchError } = await supabase
+        .from('travel_groups')
+        .select('creator_id')
+        .eq('id', groupId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (group.creator_id !== userId) {
+        return { 
+          success: false, 
+          error: 'Only the group creator can delete the group' 
+        };
+      }
+
+      // Delete the group (cascade will handle related records)
+      const { error } = await supabase
+        .from('travel_groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      toast.error('Failed to delete travel group');
+      return { success: false, error };
+    }
+  },
+
+  async joinGroup(groupId: string, userId: string): Promise<{ success: boolean, error?: any }> {
+    try {
+      // Check if already a member
       const { data: existingMember, error: checkError } = await supabase
         .from('group_members')
         .select('id, status')
         .eq('travel_group_id', groupId)
         .eq('profile_id', userId)
         .maybeSingle();
-        
+
       if (checkError) throw checkError;
-      
-      // If already a member with accepted status, return early
-      if (existingMember?.status === 'accepted') {
-        toast.info('You are already a member of this group');
-        return { success: true, alreadyMember: true };
+
+      if (existingMember) {
+        if (existingMember.status === 'accepted') {
+          return { 
+            success: false, 
+            error: 'You are already a member of this group' 
+          };
+        } else if (existingMember.status === 'pending') {
+          return { 
+            success: false, 
+            error: 'Your request to join is pending approval' 
+          };
+        } else if (existingMember.status === 'rejected') {
+          // Update the rejected request to pending
+          const { error: updateError } = await supabase
+            .from('group_members')
+            .update({ status: 'pending' })
+            .eq('id', existingMember.id);
+
+          if (updateError) throw updateError;
+          return { success: true };
+        }
       }
-      
-      // If pending, update the notification
-      if (existingMember?.status === 'pending') {
-        toast.info('Your request to join this group is pending');
-        return { success: true, pending: true };
+
+      // Check if group requires approval
+      const { data: group, error: groupError } = await supabase
+        .from('travel_groups')
+        .select('max_participants, current_participants')
+        .eq('id', groupId)
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Check if group is full
+      if (group.max_participants && group.current_participants >= group.max_participants) {
+        return { 
+          success: false, 
+          error: 'This group is already at maximum capacity' 
+        };
       }
-      
-      // Otherwise, create a new membership request
-      const { data, error } = await supabase
+
+      // Add member with pending status
+      const { error: joinError } = await supabase
         .from('group_members')
         .insert({
           travel_group_id: groupId,
           profile_id: userId,
           status: 'pending'
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      toast.success('Request to join group sent');
-      return { success: true, data };
+        });
+
+      if (joinError) throw joinError;
+
+      return { success: true };
     } catch (error) {
       console.error('Error joining group:', error);
       toast.error('Failed to join travel group');
       return { success: false, error };
     }
   },
-  
-  // Approve or reject a join request
-  async manageJoinRequest(requestId: string, status: 'accepted' | 'rejected', userId: string) {
+
+  async leaveGroup(groupId: string, userId: string): Promise<{ success: boolean, error?: any }> {
     try {
-      // First verify the user is the group creator
-      const { data: request, error: fetchError } = await supabase
-        .from('group_members')
-        .select(`
-          id,
-          travel_group:travel_groups(id, creator_id, max_participants, current_participants)
-        `)
-        .eq('id', requestId)
-        .single();
-        
-      if (fetchError) throw fetchError;
-      
-      // Check if user is the group creator
-      if (request.travel_group.creator_id !== userId) {
-        return { success: false, error: 'Only the group creator can manage join requests' };
-      }
-      
-      // If accepting, check if group is full
-      if (status === 'accepted') {
-        const currentCount = request.travel_group.current_participants || 0;
-        const maxCount = request.travel_group.max_participants || 10;
-        
-        if (currentCount >= maxCount) {
-          return { success: false, error: 'This group is already at maximum capacity' };
-        }
-        
-        // Update the current_participants count if accepting
-        const { error: updateGroupError } = await supabase
-          .from('travel_groups')
-          .update({ current_participants: currentCount + 1 })
-          .eq('id', request.travel_group.id);
-          
-        if (updateGroupError) throw updateGroupError;
-      }
-      
-      // Update the request status
-      const { data, error } = await supabase
-        .from('group_members')
-        .update({ status })
-        .eq('id', requestId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error managing join request:', error);
-      toast.error('Failed to update join request');
-      return { success: false, error };
-    }
-  },
-  
-  // Leave a group
-  async leaveGroup(groupId: string, userId: string) {
-    try {
-      // Check if user is the group creator
+      // Check if user is the creator
       const { data: group, error: groupError } = await supabase
         .from('travel_groups')
         .select('creator_id')
         .eq('id', groupId)
         .single();
-        
+
       if (groupError) throw groupError;
-      
-      // Creators can't leave their own groups, they need to delete them
+
       if (group.creator_id === userId) {
-        toast.error('As the group creator, you cannot leave the group. You can delete it instead.');
-        return { success: false, error: 'Creators cannot leave their own groups' };
+        return { 
+          success: false, 
+          error: 'As the creator, you cannot leave the group. You can delete it instead.' 
+        };
       }
-      
-      // Delete the membership
-      const { data: membership, error: fetchError } = await supabase
-        .from('group_members')
-        .select('id, status')
-        .eq('travel_group_id', groupId)
-        .eq('profile_id', userId)
-        .maybeSingle();
-        
-      if (fetchError) throw fetchError;
-      
-      // If not a member, return early
-      if (!membership) {
-        return { success: false, error: 'You are not a member of this group' };
-      }
-      
-      // Only reduce member count if status was accepted
-      if (membership.status === 'accepted') {
-        // Reduce the current_participants count
-        const { error: updateGroupError } = await supabase
-          .from('travel_groups')
-          .update({ 
-            current_participants: supabase.rpc('decrement', { x: 1 }) 
-          })
-          .eq('id', groupId);
-          
-        if (updateGroupError) throw updateGroupError;
-      }
-      
-      // Delete the membership
-      const { error: deleteError } = await supabase
+
+      // Remove the member
+      const { error: leaveError } = await supabase
         .from('group_members')
         .delete()
-        .eq('id', membership.id);
-        
-      if (deleteError) throw deleteError;
-      
-      toast.success('You have left the group');
+        .eq('travel_group_id', groupId)
+        .eq('profile_id', userId);
+
+      if (leaveError) throw leaveError;
+
+      // Update participant count
+      const { error: updateError } = await supabase
+        .from('travel_groups')
+        .update({
+          current_participants: supabase.rpc('decrement', { x: 1 })
+        })
+        .eq('id', groupId);
+
+      if (updateError) {
+        console.error('Error updating participant count:', updateError);
+        // Continue even if this fails
+      }
+
       return { success: true };
     } catch (error) {
       console.error('Error leaving group:', error);
@@ -224,36 +471,150 @@ export const GroupController = {
       return { success: false, error };
     }
   },
-  
-  // Delete a group (only allowed for group creator)
-  async deleteGroup(groupId: string, userId: string) {
+
+  async approveJoinRequest(groupId: string, memberId: string, userId: string): Promise<{ success: boolean, error?: any }> {
     try {
-      // Verify the user is the group creator
+      // Check if user is the creator
+      const { data: group, error: groupError } = await supabase
+        .from('travel_groups')
+        .select('creator_id, max_participants, current_participants')
+        .eq('id', groupId)
+        .single();
+
+      if (groupError) throw groupError;
+
+      if (group.creator_id !== userId) {
+        return { 
+          success: false, 
+          error: 'Only the group creator can approve join requests' 
+        };
+      }
+
+      // Check if group is full
+      if (group.max_participants && group.current_participants >= group.max_participants) {
+        return { 
+          success: false, 
+          error: 'This group is already at maximum capacity' 
+        };
+      }
+
+      // Approve the request
+      const { error: approveError } = await supabase
+        .from('group_members')
+        .update({ status: 'accepted' })
+        .eq('travel_group_id', groupId)
+        .eq('profile_id', memberId);
+
+      if (approveError) throw approveError;
+
+      // Update participant count
+      const { error: updateError } = await supabase
+        .from('travel_groups')
+        .update({
+          current_participants: supabase.rpc('increment', { x: 1 })
+        })
+        .eq('id', groupId);
+
+      if (updateError) {
+        console.error('Error updating participant count:', updateError);
+        // Continue even if this fails
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error approving join request:', error);
+      toast.error('Failed to approve join request');
+      return { success: false, error };
+    }
+  },
+
+  async rejectJoinRequest(groupId: string, memberId: string, userId: string): Promise<{ success: boolean, error?: any }> {
+    try {
+      // Check if user is the creator
       const { data: group, error: groupError } = await supabase
         .from('travel_groups')
         .select('creator_id')
         .eq('id', groupId)
         .single();
-        
+
       if (groupError) throw groupError;
-      
+
       if (group.creator_id !== userId) {
-        return { success: false, error: 'Only the group creator can delete the group' };
+        return { 
+          success: false, 
+          error: 'Only the group creator can reject join requests' 
+        };
       }
-      
-      // Delete the group (will cascade delete memberships, messages, etc.)
-      const { error: deleteError } = await supabase
-        .from('travel_groups')
-        .delete()
-        .eq('id', groupId);
-        
-      if (deleteError) throw deleteError;
-      
-      toast.success('Group has been deleted');
+
+      // Reject the request
+      const { error: rejectError } = await supabase
+        .from('group_members')
+        .update({ status: 'rejected' })
+        .eq('travel_group_id', groupId)
+        .eq('profile_id', memberId);
+
+      if (rejectError) throw rejectError;
+
       return { success: true };
     } catch (error) {
-      console.error('Error deleting group:', error);
-      toast.error('Failed to delete travel group');
+      console.error('Error rejecting join request:', error);
+      toast.error('Failed to reject join request');
+      return { success: false, error };
+    }
+  },
+
+  async removeMember(groupId: string, memberId: string, userId: string): Promise<{ success: boolean, error?: any }> {
+    try {
+      // Check if user is the creator
+      const { data: group, error: groupError } = await supabase
+        .from('travel_groups')
+        .select('creator_id')
+        .eq('id', groupId)
+        .single();
+
+      if (groupError) throw groupError;
+
+      if (group.creator_id !== userId) {
+        return { 
+          success: false, 
+          error: 'Only the group creator can remove members' 
+        };
+      }
+
+      // Cannot remove the creator
+      if (memberId === group.creator_id) {
+        return { 
+          success: false, 
+          error: 'Cannot remove the group creator' 
+        };
+      }
+
+      // Remove the member
+      const { error: removeError } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('travel_group_id', groupId)
+        .eq('profile_id', memberId);
+
+      if (removeError) throw removeError;
+
+      // Update participant count
+      const { error: updateError } = await supabase
+        .from('travel_groups')
+        .update({
+          current_participants: supabase.rpc('decrement', { x: 1 })
+        })
+        .eq('id', groupId);
+
+      if (updateError) {
+        console.error('Error updating participant count:', updateError);
+        // Continue even if this fails
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member');
       return { success: false, error };
     }
   }

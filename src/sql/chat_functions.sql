@@ -44,3 +44,30 @@ BEGIN
   RETURN v_creator_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get group messages with user info
+CREATE OR REPLACE FUNCTION public.get_group_messages(
+  p_group_id UUID
+) RETURNS JSON AS $$
+BEGIN
+  RETURN (
+    SELECT json_agg(
+      json_build_object(
+        'id', m.id,
+        'content', m.content,
+        'created_at', m.created_at,
+        'sender', json_build_object(
+          'id', p.id,
+          'username', p.username,
+          'full_name', p.full_name,
+          'avatar_url', p.avatar_url
+        )
+      )
+    )
+    FROM public.group_messages m
+    JOIN public.profiles p ON m.sender_id = p.id
+    WHERE m.travel_group_id = p_group_id
+    ORDER BY m.created_at ASC
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

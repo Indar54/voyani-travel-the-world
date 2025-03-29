@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ExtendedTables } from '@/utils/database-types';
 
 // Rate limiting variables
 const MAX_MESSAGES_PER_MINUTE = 20;
@@ -29,23 +30,34 @@ export const ChatController = {
   // Fetch messages for a group
   async fetchGroupMessages(groupId: string): Promise<GroupMessage[]> {
     try {
-      const { data, error } = await supabase
-        .from('group_messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          sender:profiles(id, username, full_name, avatar_url)
-        `)
-        .eq('travel_group_id', groupId)
-        .order('created_at', { ascending: true });
-        
+      // Use raw SQL query to work around type limitations
+      const { data, error } = await supabase.rpc('get_group_messages', {
+        p_group_id: groupId
+      }).returns<GroupMessage[]>();
+
+      // If the RPC isn't available yet, fallback to direct SQL query
       if (error) {
-        console.error('Error fetching group messages:', error);
-        throw error;
+        console.log('Fallback to direct query:', error);
+        const { data: rawData, error: queryError } = await supabase
+          .from('group_messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            sender:profiles!inner(id, username, full_name, avatar_url)
+          `)
+          .eq('travel_group_id', groupId)
+          .order('created_at', { ascending: true });
+          
+        if (queryError) {
+          console.error('Error fetching group messages:', queryError);
+          throw queryError;
+        }
+        
+        return (rawData as unknown) as GroupMessage[] || [];
       }
       
-      return data as GroupMessage[] || [];
+      return data || [];
     } catch (error) {
       console.error('Error fetching group messages:', error);
       toast.error('Failed to load messages');
@@ -90,6 +102,7 @@ export const ChatController = {
         
       if (error) {
         console.error('RPC Error sending message:', error);
+        
         // Fall back to a raw query if RPC isn't set up
         const { data: directData, error: directError } = await supabase
           .from('group_messages')
@@ -97,7 +110,7 @@ export const ChatController = {
             travel_group_id: groupId,
             sender_id: userId,
             content: content,
-          })
+          } as any)
           .select('id')
           .single();
           
@@ -157,6 +170,7 @@ export const ChatController = {
         console.error('Error checking delete permission:', fetchError);
         
         // Fallback to manual verification if RPC isn't available
+        // First get the message details
         const { data: message, error: directFetchError } = await supabase
           .from('group_messages')
           .select(`
@@ -170,13 +184,13 @@ export const ChatController = {
         if (directFetchError) throw directFetchError;
         
         // Check if user is message sender
-        const isMessageSender = message.sender_id === userId;
+        const isMessageSender = (message as any).sender_id === userId;
         
         // Check if user is group creator
         const { data: group, error: groupError } = await supabase
           .from('travel_groups')
           .select('creator_id')
-          .eq('id', message.travel_group_id)
+          .eq('id', (message as any).travel_group_id)
           .single();
           
         if (groupError) throw groupError;

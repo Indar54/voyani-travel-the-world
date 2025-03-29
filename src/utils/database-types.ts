@@ -35,6 +35,10 @@ export interface ExtendedDatabase extends Database {
     Tables: Database['public']['Tables'] & {
       group_messages: GroupMessagesTable;
     };
+    Views: Database['public']['Views'];
+    Functions: Database['public']['Functions'];
+    Enums: Database['public']['Enums'];
+    CompositeTypes: Database['public']['CompositeTypes'];
   };
 }
 
