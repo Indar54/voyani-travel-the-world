@@ -1,15 +1,3 @@
-// Just need to fix line 204:
-// Replace:
-// groupMembers.count = await supabase.from('group_members').count().eq('travel_group_id', group.id);
-// With:
-groupMembers.count = await supabase
-  .from('group_members')
-  .select('*', { count: 'exact', head: true })
-  .eq('travel_group_id', group.id)
-  .then(({ count }) => count || 0);
-```
-
-I notice that the AI only provided a partial update for the GroupController.ts file. Let me provide the full code that would be needed for this file, incorporating the fix:
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -272,7 +260,7 @@ export const GroupController = {
           end_date: groupData.endDate,
           budget_range: groupData.budget || null,
           max_participants: groupData.maxParticipants || null,
-          image_url: groupData.imageUrl || null,
+          image_url: groupData.imageUrl || null
         })
         .eq('id', groupId)
         .select()
