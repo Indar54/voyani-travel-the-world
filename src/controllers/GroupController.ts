@@ -155,12 +155,15 @@ export const GroupController = {
         count: 0
       };
       
-      // Get the count of members
-      groupMembers.count = await supabase
+      // Get the count of members using proper count method
+      const { count, error: countError } = await supabase
         .from('group_members')
         .select('*', { count: 'exact', head: true })
-        .eq('travel_group_id', groupId)
-        .then(({ count }) => count || 0);
+        .eq('travel_group_id', groupId);
+        
+      if (countError) throw countError;
+      
+      groupMembers.count = count || 0;
 
       return groupMembers;
     } catch (error) {
@@ -495,7 +498,7 @@ export const GroupController = {
 
       if (approveError) throw approveError;
 
-      // Update participant count
+      // Update participant count using the count method
       const { error: updateError } = await supabase
         .from('travel_groups')
         .update({
@@ -586,7 +589,7 @@ export const GroupController = {
 
       if (removeError) throw removeError;
 
-      // Update participant count
+      // Update participant count using the proper count method
       const { error: updateError } = await supabase
         .from('travel_groups')
         .update({

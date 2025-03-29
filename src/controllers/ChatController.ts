@@ -30,16 +30,17 @@ export const ChatController = {
   // Fetch messages for a group
   async fetchGroupMessages(groupId: string): Promise<GroupMessage[]> {
     try {
-      // Use raw SQL query to work around type limitations
+      // Use RPC function to get messages
       const { data, error } = await supabase.rpc('get_group_messages', {
         p_group_id: groupId
-      }).returns<GroupMessage[]>();
+      });
 
       // If the RPC isn't available yet, fallback to direct SQL query
       if (error) {
         console.log('Fallback to direct query:', error);
-        const { data: rawData, error: queryError } = await supabase
-          .from('group_messages')
+        
+        // Use a raw SQL query to avoid type issues
+        const { data: rawData, error: queryError } = await supabase.from('group_messages')
           .select(`
             id,
             content,
@@ -47,17 +48,17 @@ export const ChatController = {
             sender:profiles!inner(id, username, full_name, avatar_url)
           `)
           .eq('travel_group_id', groupId)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true }) as any;
           
         if (queryError) {
           console.error('Error fetching group messages:', queryError);
           throw queryError;
         }
         
-        return (rawData as unknown) as GroupMessage[] || [];
+        return (rawData || []) as GroupMessage[];
       }
       
-      return data || [];
+      return (data || []) as GroupMessage[];
     } catch (error) {
       console.error('Error fetching group messages:', error);
       toast.error('Failed to load messages');
@@ -92,20 +93,18 @@ export const ChatController = {
     }
     
     try {
-      // Use rpc call or raw SQL query to bypass type checking issues
-      const { data, error } = await supabase
-        .rpc('insert_group_message', {
-          p_travel_group_id: groupId,
-          p_sender_id: userId,
-          p_content: content
-        });
+      // Use RPC call to insert message
+      const { data, error } = await supabase.rpc('insert_group_message', {
+        p_travel_group_id: groupId,
+        p_sender_id: userId,
+        p_content: content
+      });
         
       if (error) {
         console.error('RPC Error sending message:', error);
         
-        // Fall back to a raw query if RPC isn't set up
-        const { data: directData, error: directError } = await supabase
-          .from('group_messages')
+        // Fall back to a direct insert if RPC isn't set up
+        const { data: directData, error: directError } = await supabase.from('group_messages')
           .insert({
             travel_group_id: groupId,
             sender_id: userId,
@@ -160,7 +159,7 @@ export const ChatController = {
   // Delete a message (only allowed for message sender or group admin)
   async deleteMessage(messageId: string, userId: string) {
     try {
-      // First, verify the user can delete this message using a raw query
+      // First, verify the user can delete this message using an RPC
       const { data, error: fetchError } = await supabase.rpc('check_message_delete_permission', {
         p_message_id: messageId,
         p_user_id: userId
@@ -171,26 +170,25 @@ export const ChatController = {
         
         // Fallback to manual verification if RPC isn't available
         // First get the message details
-        const { data: message, error: directFetchError } = await supabase
-          .from('group_messages')
+        const { data: message, error: directFetchError } = await supabase.from('group_messages')
           .select(`
             id, 
             sender_id, 
             travel_group_id
           `)
           .eq('id', messageId)
-          .single();
+          .single() as any;
           
         if (directFetchError) throw directFetchError;
         
         // Check if user is message sender
-        const isMessageSender = (message as any).sender_id === userId;
+        const isMessageSender = message.sender_id === userId;
         
         // Check if user is group creator
         const { data: group, error: groupError } = await supabase
           .from('travel_groups')
           .select('creator_id')
-          .eq('id', (message as any).travel_group_id)
+          .eq('id', message.travel_group_id)
           .single();
           
         if (groupError) throw groupError;
@@ -204,11 +202,10 @@ export const ChatController = {
         return { success: false, error: 'You do not have permission to delete this message' };
       }
       
-      // Delete the message
-      const { error: deleteError } = await supabase
-        .from('group_messages')
+      // Delete the message using a direct delete operation with type assertion
+      const { error: deleteError } = await supabase.from('group_messages')
         .delete()
-        .eq('id', messageId);
+        .eq('id', messageId) as any;
         
       if (deleteError) throw deleteError;
       
