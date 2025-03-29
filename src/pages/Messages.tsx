@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from '@/components/ChatMessage';
 import ChatList from '@/components/ChatList';
 import { supabase } from '@/integrations/supabase/client';
+import ChatController from '@/controllers/ChatController';
 
 const Messages = () => {
   const { user, profile } = useAuth();
@@ -32,14 +33,12 @@ const Messages = () => {
   useEffect(() => {
     if (activeChat) {
       fetchMessages(activeChat.id);
-      subscribeToMessages(activeChat.id);
+      const unsubscribe = subscribeToMessages(activeChat.id);
+      
+      return () => {
+        unsubscribe();
+      };
     }
-
-    return () => {
-      if (activeChat) {
-        unsubscribeFromMessages();
-      }
-    };
   }, [activeChat]);
 
   const fetchUserGroups = async () => {
@@ -101,47 +100,28 @@ const Messages = () => {
   };
 
   const subscribeToMessages = (groupId: string) => {
-    // Subscribe to real-time updates using Supabase's realtime feature
-    // This would require enabling realtime on your Supabase instance
-    // For now, we'll implement a polling mechanism
-    const interval = setInterval(() => {
+    return ChatController.subscribeToGroupMessages(groupId, (payload) => {
+      // When a new message comes in, refresh the messages
       fetchMessages(groupId);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  };
-
-  const unsubscribeFromMessages = () => {
-    // Unsubscribe from real-time updates
+    });
   };
 
   const fetchMessages = async (groupId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('group_messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          sender:profiles(id, username, full_name, avatar_url)
-        `)
-        .eq('travel_group_id', groupId)
-        .order('created_at', { ascending: true });
-        
-      if (error) throw error;
+      const groupMessages = await ChatController.fetchGroupMessages(groupId);
       
       // Format messages for display
-      const formattedMessages = data?.map(msg => ({
+      const formattedMessages = groupMessages.map(msg => ({
         id: msg.id,
         text: msg.content,
         timestamp: msg.created_at,
         sender: {
           id: msg.sender.id,
-          name: msg.sender.full_name || msg.sender.username,
+          name: msg.sender.full_name || msg.sender.username || 'Unknown User',
           avatar: msg.sender.avatar_url,
         },
         isOwn: msg.sender.id === user?.id,
-      })) || [];
+      }));
       
       setMessages(formattedMessages);
     } catch (error) {
@@ -153,19 +133,12 @@ const Messages = () => {
     if (!newMessage.trim() || !activeChat || !user) return;
     
     try {
-      const { error } = await supabase
-        .from('group_messages')
-        .insert({
-          travel_group_id: activeChat.id,
-          sender_id: user.id,
-          content: newMessage,
-        });
-        
-      if (error) throw error;
+      const result = await ChatController.sendGroupMessage(activeChat.id, user.id, newMessage);
       
-      // Clear input and refetch messages
-      setNewMessage('');
-      fetchMessages(activeChat.id);
+      if (result.success) {
+        // Clear input - no need to refetch, the subscription will handle that
+        setNewMessage('');
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     }
