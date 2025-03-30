@@ -107,7 +107,7 @@ const GroupDetails = () => {
           image: groupData.image_url || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop",
           startDate: groupData.start_date,
           endDate: groupData.end_date,
-          maxParticipants: groupData.max_participants,
+          maxParticipants: groupData.max_participants || 0,
           currentParticipants: membersData?.length || 0,
           tags: tagsData?.map(t => t.tag) || [],
           isCreator: user?.id === groupData.creator_id
