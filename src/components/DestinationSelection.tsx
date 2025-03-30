@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -149,7 +148,7 @@ const destinationsByState: Record<string, Array<{ name: string; image: string; a
   ]
 };
 
-const DestinationSelection: React.FC<DestinationSelectionProps> = ({ state, onSelectDestination, isWorldDestination = false }) => {
+export const DestinationSelection = ({ state, onSelectDestination, isWorldDestination = false }: DestinationSelectionProps) => {
   // Get destinations for the selected state, or fall back to default
   const destinations = destinationsByState[state] || destinationsByState.default;
   const regionType = isWorldDestination ? "Country" : "State";
@@ -179,8 +178,8 @@ const DestinationSelection: React.FC<DestinationSelectionProps> = ({ state, onSe
                 alt={destination.name} 
                 className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
                 onError={(e) => {
-                  console.log(`Destination image failed to load: ${destination.image}`);
-                  (e.target as HTMLImageElement).src = fallbackImage;
+                  const target = e.target as HTMLImageElement;
+                  target.src = fallbackImage;
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
@@ -209,5 +208,3 @@ const DestinationSelection: React.FC<DestinationSelectionProps> = ({ state, onSe
     </div>
   );
 };
-
-export default DestinationSelection;

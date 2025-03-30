@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Globe } from 'lucide-react';
@@ -98,12 +97,12 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
                 >
                   <div className="h-8 w-8 rounded overflow-hidden">
                     <img 
-                      src={group.image} 
+                      src={group.image || fallbackImage} 
                       alt={group.title} 
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        console.log(`Group image failed to load: ${group.image}`);
-                        (e.target as HTMLImageElement).src = fallbackImage;
+                        const target = e.target as HTMLImageElement;
+                        target.src = fallbackImage;
                       }}
                     />
                   </div>
@@ -141,9 +140,7 @@ const CommandSearch: React.FC<CommandSearchProps> = ({ open, setOpen }) => {
             .map(country => (
               <CommandItem 
                 key={country} 
-                onSelect={() => navigate('/local-travel', { 
-                  state: { isInternational: true } 
-                })}
+                onSelect={() => handleSelect('/local-travel')}
                 className="flex items-center gap-2"
               >
                 <Globe className="h-4 w-4" />

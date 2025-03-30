@@ -1,11 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Users, MapPin, Wallet } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, Users, MapPin } from 'lucide-react';
 
 interface BudgetTravelGroup {
   id: string;
@@ -24,12 +21,7 @@ interface BudgetTravelCardProps {
   group: BudgetTravelGroup;
 }
 
-const BudgetTravelCard: React.FC<BudgetTravelCardProps> = ({ group }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy');
-  };
-
+export const BudgetTravelCard = ({ group }: BudgetTravelCardProps) => {
   return (
     <Link to={`/group/${group.id}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -75,5 +67,3 @@ const BudgetTravelCard: React.FC<BudgetTravelCardProps> = ({ group }) => {
     </Link>
   );
 };
-
-export default BudgetTravelCard;

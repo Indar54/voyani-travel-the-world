@@ -1,7 +1,10 @@
-
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
+type Profile = Tables['profiles']['Row'];
 
 interface ChatMessageProps {
   message: {
@@ -57,3 +60,4 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 };
 
 export default ChatMessage;
+

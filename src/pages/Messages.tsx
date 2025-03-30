@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
@@ -11,15 +11,46 @@ import { Search, Send, Users, UserPlus, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from '@/components/ChatMessage';
-import ChatList from '@/components/ChatList';
-import { supabase } from '@/integrations/supabase/client';
-import ChatController from '@/controllers/ChatController';
+import { ChatList } from '@/components/ChatList';
+import { supabase } from '@/lib/supabase';
+import type { Database } from '@/types/database';
 
-const Messages = () => {
-  const { user, profile } = useAuth();
-  const [activeChat, setActiveChat] = useState<any>(null);
-  const [myGroups, setMyGroups] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
+type Tables = Database['public']['Tables'];
+type GroupMessage = Tables['group_messages']['Row'] & {
+  profiles: Tables['profiles']['Row'];
+};
+
+type TravelGroup = Tables['travel_groups']['Row'] & {
+  group_messages: Pick<Tables['group_messages']['Row'], 'content' | 'created_at'>[];
+};
+
+interface Chat {
+  id: string;
+  title: string;
+  image: string;
+  isGroup: boolean;
+  lastMessage: string;
+  lastMessageTime: string;
+  unread: number;
+}
+
+interface ChatMessageType {
+  id: string;
+  text: string;
+  timestamp: string;
+  sender: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+  isOwn: boolean;
+}
+
+export const Messages = () => {
+  const { user } = useAuth();
+  const [activeChat, setActiveChat] = useState<Chat | null>(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,113 +62,118 @@ const Messages = () => {
 
   useEffect(() => {
     if (activeChat) {
-      fetchMessages(activeChat.id);
-      const unsubscribe = subscribeToMessages(activeChat.id);
-      
+      fetchMessages();
+      const unsubscribe = subscribeToMessages();
       return () => {
-        unsubscribe();
+        unsubscribe?.();
       };
     }
   }, [activeChat]);
 
   const fetchUserGroups = async () => {
+    if (!user?.id) return;
+
     try {
-      // Fetch groups created by or joined by the user
-      const { data: createdGroups, error: createdError } = await supabase
+      const { data: groups, error } = await supabase
         .from('travel_groups')
         .select(`
-          id,
-          title,
-          image_url,
-          creator:profiles(username, avatar_url),
-          members:group_members!inner(profile_id, status)
+          *,
+          group_messages (
+            content,
+            created_at
+          )
         `)
-        .eq('creator_id', user?.id)
-        .eq('members.status', 'accepted')
-        .order('updated_at', { ascending: false });
-        
-      if (createdError) throw createdError;
-      
-      // Fetch groups joined by the user
-      const { data: joinedGroups, error: joinedError } = await supabase
-        .from('travel_groups')
-        .select(`
-          id,
-          title,
-          image_url,
-          creator:profiles(username, avatar_url),
-          members:group_members!inner(profile_id, status)
-        `)
-        .eq('members.profile_id', user?.id)
-        .eq('members.status', 'accepted')
-        .neq('creator_id', user?.id)
-        .order('updated_at', { ascending: false });
-        
-      if (joinedError) throw joinedError;
-      
-      const allGroups = [...createdGroups, ...joinedGroups].map(group => ({
+        .eq('creator_id', user.id);
+
+      if (error) throw error;
+
+      if (!groups) return;
+
+      const formattedChats: Chat[] = groups.map(group => ({
         id: group.id,
         title: group.title,
-        image: group.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
+        image: group.image_url || '',
         isGroup: true,
-        lastMessage: "No messages yet",
-        lastMessageTime: new Date().toISOString(),
-        unread: 0,
+        lastMessage: group.group_messages?.[0]?.content || 'No messages yet',
+        lastMessageTime: group.group_messages?.[0]?.created_at || new Date().toISOString(),
+        unread: 0
       }));
-      
-      setMyGroups(allGroups);
+
+      setChats(formattedChats);
       setIsLoading(false);
-      
-      // Set the first group as active chat if there's no active chat
-      if (allGroups.length > 0 && !activeChat) {
-        setActiveChat(allGroups[0]);
-      }
     } catch (error) {
-      console.error('Error fetching user groups for chat:', error);
+      console.error('Error fetching groups:', error);
       setIsLoading(false);
     }
   };
 
-  const subscribeToMessages = (groupId: string) => {
-    return ChatController.subscribeToGroupMessages(groupId, (payload) => {
-      // When a new message comes in, refresh the messages
-      fetchMessages(groupId);
-    });
-  };
+  const fetchMessages = async () => {
+    if (!activeChat) return;
 
-  const fetchMessages = async (groupId: string) => {
     try {
-      const groupMessages = await ChatController.fetchGroupMessages(groupId);
-      
-      // Format messages for display
-      const formattedMessages = groupMessages.map(msg => ({
-        id: msg.id,
-        text: msg.content,
-        timestamp: msg.created_at,
-        sender: {
-          id: msg.sender.id,
-          name: msg.sender.full_name || msg.sender.username || 'Unknown User',
-          avatar: msg.sender.avatar_url,
-        },
-        isOwn: msg.sender.id === user?.id,
-      }));
-      
-      setMessages(formattedMessages);
+      const { data, error } = await supabase
+        .from('group_messages')
+        .select(`
+          *,
+          profiles (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('group_id', activeChat.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (!data) return;
+
+      setMessages(data as GroupMessage[]);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
   };
 
-  const sendMessage = async () => {
+  const subscribeToMessages = () => {
+    if (!activeChat) return;
+
+    const subscription = supabase
+      .channel('group_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'group_messages',
+          filter: `group_id=eq.${activeChat.id}`
+        },
+        () => {
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  };
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeChat || !user) return;
-    
+
     try {
-      const result = await ChatController.sendGroupMessage(activeChat.id, user.id, newMessage);
-      
-      if (result.success) {
-        // Clear input - no need to refetch, the subscription will handle that
-        setNewMessage('');
-      }
+      const { error } = await supabase
+        .from('group_messages')
+        .insert({
+          content: newMessage,
+          group_id: activeChat.id,
+          sender_id: user.id,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -146,7 +182,7 @@ const Messages = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
@@ -194,7 +230,7 @@ const Messages = () => {
                   <TabsContent value="groups" className="m-0">
                     <ScrollArea className="h-[calc(100vh-345px)]">
                       <ChatList 
-                        chats={myGroups}
+                        chats={chats}
                         activeChat={activeChat}
                         onChatSelect={setActiveChat}
                         isLoading={isLoading}
@@ -236,7 +272,20 @@ const Messages = () => {
                       {messages.length > 0 ? (
                         <div className="space-y-4">
                           {messages.map((message) => (
-                            <ChatMessage key={message.id} message={message} />
+                            <ChatMessage
+                              key={message.id}
+                              message={{
+                                id: message.id,
+                                text: message.content,
+                                timestamp: message.created_at,
+                                sender: {
+                                  id: message.profiles.id,
+                                  name: message.profiles.full_name,
+                                  avatar: message.profiles.avatar_url
+                                },
+                                isOwn: message.sender_id === user?.id
+                              }}
+                            />
                           ))}
                         </div>
                       ) : (
@@ -253,15 +302,15 @@ const Messages = () => {
                     
                     <div className="border-t p-4">
                       <div className="flex items-center">
-                        <Input 
+                        <Input
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyDown={handleKeyPress}
+                          onKeyPress={handleKeyPress}
                           placeholder="Type a message..."
                           className="flex-grow"
                         />
                         <Button 
-                          onClick={sendMessage} 
+                          onClick={handleSendMessage} 
                           disabled={!newMessage.trim()}
                           className="ml-2"
                           size="icon"
