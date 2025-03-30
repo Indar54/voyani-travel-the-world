@@ -1,4 +1,3 @@
-
 -- Function to insert a group message and return the result
 CREATE OR REPLACE FUNCTION public.insert_group_message(
   p_travel_group_id UUID,
@@ -6,11 +5,27 @@ CREATE OR REPLACE FUNCTION public.insert_group_message(
   p_content TEXT
 ) RETURNS JSON AS $$
 DECLARE
+  v_message_id UUID;
   v_result JSON;
 BEGIN
   INSERT INTO public.group_messages (travel_group_id, sender_id, content)
   VALUES (p_travel_group_id, p_sender_id, p_content)
-  RETURNING id INTO v_result;
+  RETURNING id INTO v_message_id;
+  
+  SELECT json_build_object(
+    'id', m.id,
+    'content', m.content,
+    'created_at', m.created_at,
+    'sender', json_build_object(
+      'id', p.id,
+      'username', p.username,
+      'full_name', p.full_name,
+      'avatar_url', p.avatar_url
+    )
+  ) INTO v_result
+  FROM public.group_messages m
+  JOIN public.profiles p ON m.sender_id = p.id
+  WHERE m.id = v_message_id;
   
   RETURN v_result;
 END;

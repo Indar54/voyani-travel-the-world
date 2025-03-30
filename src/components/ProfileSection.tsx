@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Edit, Calendar, Star, Shield, Globe, Flag, Users } from 'lucide-react';
+import { MapPin, Edit, Calendar, Star, Shield, Globe, Flag, Users, Loader2, Upload } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { Link } from 'react-router-dom';
+import TravelGroupCard from '@/components/TravelGroupCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 interface ProfileSectionProps {
   isOwnProfile?: boolean;
@@ -13,10 +22,131 @@ interface ProfileSectionProps {
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, profile = null }) => {
+  const { user } = useAuth();
+  const [myGroups, setMyGroups] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: profile?.full_name || '',
+    location: profile?.location || '',
+    bio: profile?.bio || '',
+  });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      fetchUserGroups();
+    }
+  }, [user]);
+  
+  const fetchUserGroups = async () => {
+    try {
+      console.log('Fetching user groups...');
+      const { data: createdGroups, error: createdError } = await supabase
+        .from('travel_groups')
+        .select(`
+          *,
+          creator:profiles(username, avatar_url),
+          tags:group_tags(tag),
+          members:group_members(profile_id, status)
+        `)
+        .eq('creator_id', user?.id)
+        .order('created_at', { ascending: false });
+        
+      if (createdError) {
+        console.error('Error fetching created groups:', createdError);
+        throw createdError;
+      }
+      
+      console.log('Created groups:', createdGroups);
+      
+      // Format created groups
+      const formattedGroups = createdGroups.map(group => ({
+        ...group,
+        id: group.id,
+        title: group.title,
+        destination: group.destination,
+        image: group.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
+        startDate: group.start_date,
+        endDate: group.end_date,
+        maxParticipants: group.max_participants,
+        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
+        tags: group.tags.map((t: any) => t.tag),
+      }));
+      
+      setMyGroups(formattedGroups);
+    } catch (error) {
+      console.error('Error fetching user groups:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setIsUploading(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Upload image to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user?.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast.success('Profile photo updated successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to update profile photo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name,
+          location: editForm.location,
+          bio: editForm.bio,
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  };
+
   const fullName = profile?.full_name || 'Jessica Doe';
   const location = profile?.location || 'San Francisco, USA';
   const bio = profile?.bio || 'Adventure enthusiast and nature lover. I enjoy hiking, photography, and experiencing different cultures. Always looking for my next travel companion!';
-  const avatarUrl = profile?.avatar_url;
   const username = profile?.username;
   const userInitials = fullName ? `${fullName.charAt(0)}${fullName.split(' ')[1]?.charAt(0) || ''}` : 'JD';
 
@@ -27,14 +157,37 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
           <Card className="overflow-hidden">
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center mb-6">
-                <Avatar className="h-24 w-24 mb-4">
-                  {avatarUrl ? (
-                    <AvatarImage src={avatarUrl} alt={fullName} />
-                  ) : null}
-                  <AvatarFallback className="bg-voyani-100 text-voyani-700 text-2xl">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-24 w-24 mb-4">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt={fullName} />
+                    ) : null}
+                    <AvatarFallback className="bg-voyani-100 text-voyani-700 text-2xl">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isOwnProfile && (
+                    <div className="absolute bottom-0 right-0">
+                      <label className="cursor-pointer">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          disabled={isUploading}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </label>
+                    </div>
+                  )}
+                </div>
                 <h2 className="text-2xl font-bold">{fullName}</h2>
                 <div className="flex items-center text-muted-foreground mt-1">
                   <MapPin className="h-4 w-4 mr-1" />
@@ -53,10 +206,48 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
               </div>
               
               {isOwnProfile && (
-                <Button variant="outline" className="w-full mb-6">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
+                <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full mb-6">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Profile</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="full_name">Full Name</Label>
+                        <Input
+                          id="full_name"
+                          value={editForm.full_name}
+                          onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Location</Label>
+                        <Input
+                          id="location"
+                          value={editForm.location}
+                          onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="bio">Bio</Label>
+                        <Textarea
+                          id="bio"
+                          value={editForm.bio}
+                          onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={handleSaveProfile} className="w-full">
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               )}
               
               <div className="space-y-4">
@@ -123,36 +314,27 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
             </TabsList>
             
             <TabsContent value="trips" className="mt-6 animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <Card key={i} className="overflow-hidden hover-lift">
-                    <div className="aspect-w-16 aspect-h-9 relative">
-                      <img 
-                        src={`https://source.unsplash.com/random/300x200?travel&sig=${i}`} 
-                        alt="Trip"
-                        className="object-cover w-full h-32"
-                      />
-                      <div className="absolute top-0 right-0 p-2">
-                        <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm">
-                          {i % 2 === 0 ? "Upcoming" : "Completed"}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-4">
-                      <h3 className="font-medium mb-1">{i % 2 === 0 ? "Weekend in Paris" : "Road Trip: California Coast"}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        <span>{i % 2 === 0 ? "Paris, France" : "California, USA"}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{i % 2 === 0 ? "Nov 15 - Nov 20, 2023" : "Oct 5 - Oct 15, 2023"}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : myGroups.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {myGroups.map(group => (
+                    <TravelGroupCard key={group.id} group={group} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-muted rounded-lg">
+                  <h3 className="text-xl font-medium mb-2">No trips created yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Start planning your next adventure by creating a new travel group.
+                  </p>
+                  <Button asChild>
+                    <Link to="/create-group">Create Travel Group</Link>
+                  </Button>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="reviews" className="mt-6 animate-fade-in">

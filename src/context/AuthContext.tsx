@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User, Provider } from '@supabase/supabase-js';
@@ -109,21 +108,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({ 
+      
+      // Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
-      if (error) {
-        toast.error(error.message);
-        throw error;
+      if (authError) {
+        console.error('Auth error:', authError);
+        toast.error(authError.message);
+        throw authError;
       }
-      
+
+      if (!authData.user) {
+        throw new Error('No user data returned from sign up');
+      }
+
+      console.log('Auth user created:', authData.user.id);
+
+      // Check if email confirmation is required
+      if (authData.session === null) {
+        toast.info('Please check your email to confirm your account');
+        navigate('/auth');
+        return;
+      }
+
+      // The profile should be created automatically by the trigger
+      // Let's verify it exists
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile verification error:', profileError);
+        console.error('Error details:', {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint
+        });
+        toast.error('Failed to verify profile creation');
+        throw profileError;
+      }
+
+      console.log('Profile verified:', profileData);
+      setProfile(profileData);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {

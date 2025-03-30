@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -110,26 +109,6 @@ const CreateGroup = () => {
     }
   };
   
-  const saveGroupTags = async (groupId: string) => {
-    if (tags.length === 0) return;
-    
-    const tagObjects = tags.map(tag => ({
-      travel_group_id: groupId,
-      tag
-    }));
-    
-    try {
-      const { error } = await supabase
-        .from('group_tags')
-        .insert(tagObjects);
-        
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving tags:', error);
-      toast.error('Failed to save tags');
-    }
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -138,7 +117,7 @@ const CreateGroup = () => {
       return;
     }
     
-    if (!profile) {
+    if (!profile || !user) {
       toast.error("You need to be logged in to create a travel group");
       return;
     }
@@ -146,17 +125,36 @@ const CreateGroup = () => {
     setIsLoading(true);
     
     try {
+      console.log('Starting group creation process...');
+      
       // Upload image if present
-      const imageUrl = await uploadImage();
+      let imageUrl = null;
+      if (imageFile) {
+        console.log('Uploading image...');
+        imageUrl = await uploadImage();
+        console.log('Image uploaded:', imageUrl);
+      }
       
       // Create travel group
+      console.log('Creating travel group with data:', {
+        title: formState.title,
+        destination: formState.destination,
+        description: formState.description,
+        creator_id: user.id,
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
+        max_participants: parseInt(maxParticipants),
+        budget_range: budgetRange[0],
+        image_url: imageUrl
+      });
+      
       const { data: groupData, error: groupError } = await supabase
         .from('travel_groups')
         .insert({
           title: formState.title,
           destination: formState.destination,
           description: formState.description,
-          creator_id: profile.id,
+          creator_id: user.id,
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0],
           max_participants: parseInt(maxParticipants),
@@ -166,16 +164,36 @@ const CreateGroup = () => {
         .select()
         .single();
         
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error('Group creation error:', groupError);
+        throw groupError;
+      }
+      
+      console.log('Group created successfully:', groupData);
       
       // Save tags
-      await saveGroupTags(groupData.id);
+      if (tags.length > 0) {
+        console.log('Saving tags:', tags);
+        const { error: tagError } = await supabase
+          .from('group_tags')
+          .insert(tags.map(tag => ({
+            travel_group_id: groupData.id,
+            tag
+          })));
+          
+        if (tagError) {
+          console.error('Tag creation error:', tagError);
+          throw tagError;
+        }
+        console.log('Tags saved successfully');
+      }
       
       toast.success("Your travel group has been created successfully!");
+      console.log('Navigating to group page:', `/group/${groupData.id}`);
       navigate(`/group/${groupData.id}`);
     } catch (error) {
       console.error('Error creating travel group:', error);
-      toast.error("Failed to create travel group. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to create travel group. Please try again.");
     } finally {
       setIsLoading(false);
     }

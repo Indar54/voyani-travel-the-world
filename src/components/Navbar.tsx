@@ -1,15 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, X, User, Map, MapPin } from 'lucide-react';
+import { Search, Menu, X, User, Map, MapPin, LogOut } from 'lucide-react';
 import CommandSearch from './CommandSearch';
+import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,12 +95,43 @@ const Navbar: React.FC = () => {
                 <Search className="h-5 w-5" />
               </Button>
               
-              <Link to="/auth">
-                <Button variant="outline" className="hidden md:flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Sign In
-                </Button>
-              </Link>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || user.email} />
+                        <AvatarFallback>{profile?.full_name?.[0] || user.email?.[0]}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="flex items-center">
+                        <Map className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()} className="flex items-center">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="outline" className="hidden md:flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Sign In
+                  </Button>
+                </Link>
+              )}
 
               <Button 
                 variant="default" 
@@ -159,13 +198,41 @@ const Navbar: React.FC = () => {
                   Search
                 </div>
               </div>
-              <Link 
-                to="/auth" 
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
+              {user ? (
+                <>
+                  <Link 
+                    to="/profile" 
+                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <Link 
+                    to="/dashboard" 
+                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <div 
+                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5 cursor-pointer"
+                    onClick={() => {
+                      signOut();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Sign Out
+                  </div>
+                </>
+              ) : (
+                <Link 
+                  to="/auth" 
+                  className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         )}
