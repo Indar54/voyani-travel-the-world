@@ -15,7 +15,7 @@ export interface TravelGroup {
   maxParticipants: number;
   currentParticipants: number;
   tags: string[];
-  isCreator: boolean;
+  isCreator?: boolean;
 }
 
 export interface TravelGroupCardProps {
