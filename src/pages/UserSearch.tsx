@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -12,70 +11,49 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
+interface Profile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  location: string | null;
+  created_at: string;
+}
+
 const UserSearch = () => {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState<any[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const usersPerPage = 20;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-  
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = users.filter(u => 
-        u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.location?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
-    }
-  }, [searchTerm, users]);
-  
-  const fetchUsers = async () => {
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !user?.id) return;
+    
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .neq('id', user?.id)
-        .range((page - 1) * usersPerPage, page * usersPerPage - 1)
-        .order('created_at', { ascending: false });
+        .neq('id', user.id)
+        .ilike('full_name', `%${searchQuery}%`)
+        .limit(10);
         
       if (error) throw error;
       
-      if (data.length < usersPerPage) {
-        setHasMore(false);
-      }
-      
-      if (page === 1) {
-        setUsers(data || []);
-        setFilteredUsers(data || []);
-      } else {
-        setUsers(prev => [...prev, ...(data || [])]);
-        setFilteredUsers(prev => [...prev, ...(data || [])]);
-      }
+      setSearchResults(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
+      console.error('Error searching users:', error);
     } finally {
       setIsLoading(false);
     }
   };
   
-  const loadMore = () => {
-    setPage(prev => prev + 1);
-    fetchUsers();
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
   
-  const getInitials = (name: string | null) => {
+  const getInitials = (name: string | null | undefined) => {
     if (!name) return '?';
     const parts = name.split(' ');
     if (parts.length >= 2) {
@@ -106,48 +84,38 @@ const UserSearch = () => {
               <Input
                 className="pl-10 pr-10 py-6 bg-white shadow-sm"
                 placeholder="Search by name, username, or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
           </div>
           
-          {isLoading && page === 1 ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredUsers.length > 0 ? (
+          ) : searchResults.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredUsers.map((user) => (
-                  <Card key={user.id} className="overflow-hidden">
+                {searchResults.map((profile) => (
+                  <Card key={profile.id} className="overflow-hidden">
                     <CardContent className="p-6">
                       <div className="flex items-start">
                         <Avatar className="h-16 w-16 mr-4">
-                          <AvatarImage src={user.avatar_url} />
-                          <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+                          <AvatarImage src={profile.avatar_url || undefined} />
+                          <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg">{user.full_name}</h3>
-                          <p className="text-muted-foreground text-sm">@{user.username}</p>
-                          
-                          {user.location && (
-                            <div className="flex items-center mt-2 text-sm">
-                              <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                              <span>{user.location}</span>
-                            </div>
-                          )}
+                          <h3 className="font-bold text-lg">{profile.full_name}</h3>
+                          <p className="text-muted-foreground text-sm">@{profile.location || 'No location set'}</p>
                           
                           <div className="flex items-center mt-2 text-sm">
                             <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span>Joined {formatJoinDate(user.created_at)}</span>
+                            <span>Joined {formatJoinDate(profile.created_at)}</span>
                           </div>
                         </div>
                       </div>
-                      
-                      {user.bio && (
-                        <p className="mt-4 text-sm line-clamp-3">{user.bio}</p>
-                      )}
                       
                       <div className="mt-4 flex justify-between items-center">
                         <Button variant="outline" className="flex items-center gap-2" size="sm">
@@ -163,25 +131,6 @@ const UserSearch = () => {
                   </Card>
                 ))}
               </div>
-              
-              {hasMore && (
-                <div className="flex justify-center mt-8">
-                  <Button 
-                    onClick={loadMore} 
-                    variant="outline"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      'Load More'
-                    )}
-                  </Button>
-                </div>
-              )}
             </>
           ) : (
             <div className="text-center py-20 bg-muted rounded-lg">
@@ -189,7 +138,7 @@ const UserSearch = () => {
               <p className="text-muted-foreground mb-6">
                 Try adjusting your search terms or filters.
               </p>
-              <Button onClick={() => setSearchTerm('')}>
+              <Button onClick={() => setSearchQuery('')}>
                 Clear Search
               </Button>
             </div>

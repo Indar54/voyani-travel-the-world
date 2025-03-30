@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -10,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Users, Calendar, Loader2, Plus, MessageSquare } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import TravelGroupCard from '@/components/TravelGroupCard';
-import BudgetTravelCard from '@/components/BudgetTravelCard';
+import { BudgetTravelCard } from '@/components/BudgetTravelCard';
 
 const Dashboard = () => {
   const { profile, user } = useAuth();
@@ -23,25 +22,26 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchUserGroups();
       fetchSuggestedGroups();
       fetchBudgetTrips();
     }
-  }, [user]);
+  }, [user?.id]);
   
   const fetchUserGroups = async () => {
+    if (!user?.id) return;
+    
     try {
       // Fetch groups created by the user
       const { data: createdGroups, error: createdError } = await supabase
         .from('travel_groups')
         .select(`
           *,
-          creator:profiles(username, avatar_url),
-          tags:group_tags(tag),
+          creator:profiles(full_name, avatar_url),
           members:group_members(profile_id, status)
         `)
-        .eq('creator_id', user?.id)
+        .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
         
       if (createdError) throw createdError;
@@ -52,14 +52,13 @@ const Dashboard = () => {
         .select(`
           travel_group:travel_groups(
             *,
-            creator:profiles(username, avatar_url),
-            tags:group_tags(tag),
+            creator:profiles(full_name, avatar_url),
             members:group_members(profile_id, status)
           )
         `)
-        .eq('profile_id', user?.id)
+        .eq('profile_id', user.id)
         .eq('status', 'accepted')
-        .neq('travel_group.creator_id', user?.id);
+        .neq('travel_group.creator_id', user.id);
         
       if (memberError) throw memberError;
       
@@ -73,8 +72,7 @@ const Dashboard = () => {
         startDate: group.start_date,
         endDate: group.end_date,
         maxParticipants: group.max_participants,
-        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
-        tags: group.tags.map((t: any) => t.tag),
+        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length
       }));
       
       // Format joined groups
@@ -89,8 +87,7 @@ const Dashboard = () => {
           startDate: group.start_date,
           endDate: group.end_date,
           maxParticipants: group.max_participants,
-          currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
-          tags: group.tags.map((t: any) => t.tag),
+          currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length
         };
       });
       
@@ -104,14 +101,15 @@ const Dashboard = () => {
   };
   
   const fetchSuggestedGroups = async () => {
+    if (!user?.id) return;
+    
     try {
       // Fetch travel groups not created or joined by the user
       const { data, error } = await supabase
         .from('travel_groups')
         .select(`
           *,
-          creator:profiles(username, avatar_url),
-          tags:group_tags(tag),
+          creator:profiles(full_name, avatar_url),
           members:group_members(profile_id, status)
         `)
         .order('created_at', { ascending: false })
@@ -121,9 +119,9 @@ const Dashboard = () => {
       
       // Filter out groups created by user or already joined
       const filtered = data.filter(group => {
-        const isCreator = group.creator_id === user?.id;
+        const isCreator = group.creator_id === user.id;
         const isMember = group.members.some((m: any) => 
-          m.profile_id === user?.id && m.status === 'accepted'
+          m.profile_id === user.id && m.status === 'accepted'
         );
         return !isCreator && !isMember;
       });
@@ -138,8 +136,7 @@ const Dashboard = () => {
         startDate: group.start_date,
         endDate: group.end_date,
         maxParticipants: group.max_participants,
-        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
-        tags: group.tags.map((t: any) => t.tag),
+        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length
       }));
       
       setSuggestedGroups(formattedGroups);
@@ -149,14 +146,15 @@ const Dashboard = () => {
   };
   
   const fetchBudgetTrips = async () => {
+    if (!user?.id) return;
+    
     try {
       // Fetch budget-friendly trips (low budget_range)
       const { data, error } = await supabase
         .from('travel_groups')
         .select(`
           *,
-          creator:profiles(username, avatar_url),
-          tags:group_tags(tag),
+          creator:profiles(full_name, avatar_url),
           members:group_members(profile_id, status)
         `)
         .order('budget_range', { ascending: true })
@@ -175,8 +173,7 @@ const Dashboard = () => {
         endDate: group.end_date,
         maxParticipants: group.max_participants,
         currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
-        tags: group.tags.map((t: any) => t.tag),
-        budget: group.budget_range,
+        budget: group.budget_range
       }));
       
       setBudgetTrips(formattedGroups);
@@ -352,7 +349,21 @@ const Dashboard = () => {
               ) : budgetTrips.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {budgetTrips.map(trip => (
-                    <BudgetTravelCard key={trip.id} trip={trip} />
+                    <BudgetTravelCard 
+                      key={trip.id} 
+                      group={{
+                        id: trip.id,
+                        title: trip.title,
+                        destination: trip.destination,
+                        image_url: trip.image,
+                        start_date: trip.startDate,
+                        end_date: trip.endDate,
+                        max_participants: trip.maxParticipants,
+                        current_participants: trip.currentParticipants,
+                        tags: [], // Since we don't have tags in the current data
+                        budget: trip.budget
+                      }} 
+                    />
                   ))}
                 </div>
               ) : (

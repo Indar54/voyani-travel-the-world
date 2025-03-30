@@ -33,6 +33,13 @@ export interface Database {
         Row: {
           id: string;
           title: string;
+          description: string;
+          destination: string;
+          start_date: string;
+          end_date: string;
+          budget_range: number | null;
+          max_participants: number | null;
+          current_participants: number;
           image_url: string | null;
           creator_id: string;
           created_at: string;
@@ -40,6 +47,13 @@ export interface Database {
         Insert: {
           id?: string;
           title: string;
+          description: string;
+          destination: string;
+          start_date: string;
+          end_date: string;
+          budget_range?: number | null;
+          max_participants?: number | null;
+          current_participants?: number;
           image_url?: string | null;
           creator_id: string;
           created_at?: string;
@@ -47,6 +61,13 @@ export interface Database {
         Update: {
           id?: string;
           title?: string;
+          description?: string;
+          destination?: string;
+          start_date?: string;
+          end_date?: string;
+          budget_range?: number | null;
+          max_participants?: number | null;
+          current_participants?: number;
           image_url?: string | null;
           creator_id?: string;
           created_at?: string;
