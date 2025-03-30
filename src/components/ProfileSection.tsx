@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,40 +30,75 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
     full_name: profile?.full_name || '',
     location: profile?.location || '',
     bio: profile?.bio || '',
+    travel_interests: profile?.travel_interests || [],
+    languages: profile?.languages || []
   });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
   const [isUploading, setIsUploading] = useState(false);
   
-  useEffect(() => {
-    if (user) {
-      fetchUserGroups();
-    }
-  }, [user]);
-  
+  const [availableLanguages] = useState([
+    'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian',
+    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Bengali', 'Dutch'
+  ]);
+
+  const [availableInterests] = useState([
+    'Adventure', 'Culture', 'Nature', 'Food', 'History', 'Art', 'Music',
+    'Photography', 'Hiking', 'Beach', 'City', 'Wildlife', 'Shopping', 'Nightlife'
+  ]);
+
   const fetchUserGroups = async () => {
     try {
-      console.log('Fetching user groups...');
+      setIsLoading(true);
+      
+      if (!user?.id) {
+        console.error('No user ID found');
+        setMyGroups([]);
+        return;
+      }
+
+      // Simple query to fetch created groups
       const { data: createdGroups, error: createdError } = await supabase
         .from('travel_groups')
-        .select(`
-          *,
-          creator:profiles(username, avatar_url),
-          tags:group_tags(tag),
-          members:group_members(profile_id, status)
-        `)
-        .eq('creator_id', user?.id)
-        .order('created_at', { ascending: false });
-        
+        .select('*')
+        .eq('creator_id', user.id);
+
       if (createdError) {
         console.error('Error fetching created groups:', createdError);
         throw createdError;
       }
-      
+
       console.log('Created groups:', createdGroups);
-      
+
+      // Simple query to fetch groups where user is a member
+      const { data: memberGroups, error: memberError } = await supabase
+        .from('group_members')
+        .select('travel_group_id')
+        .eq('profile_id', user.id)
+        .eq('status', 'accepted');
+
+      if (memberError) {
+        console.error('Error fetching member groups:', memberError);
+        throw memberError;
+      }
+
+      console.log('Member group IDs:', memberGroups);
+
+      // Fetch full details of member groups
+      const memberGroupIds = memberGroups.map(m => m.travel_group_id);
+      const { data: memberGroupDetails, error: memberDetailsError } = await supabase
+        .from('travel_groups')
+        .select('*')
+        .in('id', memberGroupIds);
+
+      if (memberDetailsError) {
+        console.error('Error fetching member group details:', memberDetailsError);
+        throw memberDetailsError;
+      }
+
+      console.log('Member group details:', memberGroupDetails);
+
       // Format created groups
-      const formattedGroups = createdGroups.map(group => ({
-        ...group,
+      const formattedCreatedGroups = (createdGroups || []).map(group => ({
         id: group.id,
         title: group.title,
         destination: group.destination,
@@ -71,34 +106,192 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
         startDate: group.start_date,
         endDate: group.end_date,
         maxParticipants: group.max_participants,
-        currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length,
-        tags: group.tags.map((t: any) => t.tag),
+        currentParticipants: 1, // At least the creator
+        tags: [],
+        isCreator: true
       }));
+
+      // Format member groups
+      const formattedMemberGroups = (memberGroupDetails || []).map(group => ({
+        id: group.id,
+        title: group.title,
+        destination: group.destination,
+        image: group.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
+        startDate: group.start_date,
+        endDate: group.end_date,
+        maxParticipants: group.max_participants,
+        currentParticipants: 1, // At least one member
+        tags: [],
+        isCreator: false
+      }));
+
+      // Combine and sort all groups by date
+      const allGroups = [...formattedCreatedGroups, ...formattedMemberGroups]
+        .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
       
-      setMyGroups(formattedGroups);
+      console.log('All formatted groups:', allGroups);
+      
+      if (allGroups.length === 0) {
+        console.log('No groups found for user');
+        setMyGroups([]);
+      } else {
+        setMyGroups(allGroups);
+      }
     } catch (error) {
-      console.error('Error fetching user groups:', error);
+      console.error('Error in fetchUserGroups:', error);
+      toast.error('Failed to load your trips. Please try again later.');
+      setMyGroups([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Add a refresh function
+  const refreshGroups = () => {
+    fetchUserGroups();
+  };
+
+  // Add useEffect to refresh groups when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      fetchUserGroups();
+    }
+  }, [user, fetchUserGroups]);
+
+  // Add useEffect to refresh groups when the component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        refreshGroups();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, refreshGroups]);
+
+  // Add a function to check if a group exists
+  const checkGroupExists = async (groupId: string) => {
     try {
+      const { data, error } = await supabase
+        .from('travel_groups')
+        .select('id')
+        .eq('id', groupId)
+        .single();
+
+      if (error) {
+        console.error('Error checking group:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error in checkGroupExists:', error);
+      return false;
+    }
+  };
+
+  const handleInterestToggle = useCallback((interest: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      travel_interests: prev.travel_interests.includes(interest)
+        ? prev.travel_interests.filter(i => i !== interest)
+        : [...prev.travel_interests, interest]
+    }));
+  }, []);
+
+  const handleLanguageToggle = useCallback((language: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      languages: prev.languages.includes(language)
+        ? prev.languages.filter(l => l !== language)
+        : [...prev.languages, language]
+    }));
+  }, []);
+
+  const handleSaveProfile = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name,
+          location: editForm.location,
+          bio: editForm.bio,
+          travel_interests: editForm.travel_interests,
+          languages: editForm.languages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  }, [user, editForm]);
+
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!user) {
+        console.error('No authenticated user found');
+        toast.error('Please sign in to upload a profile picture');
+        return;
+      }
+
       setIsUploading(true);
       const file = event.target.files?.[0];
-      if (!file) return;
+      if (!file) {
+        toast.error('Please select a file');
+        return;
+      }
 
-      // Upload image to Supabase Storage
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a valid image file (JPEG, PNG, or GIF)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('File size should be less than 5MB');
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      // Delete old avatar if exists
+      if (avatarUrl) {
+        const oldPath = avatarUrl.split('/').pop();
+        if (oldPath) {
+          const { error: deleteError } = await supabase.storage
+            .from('avatars')
+            .remove([`avatars/${oldPath}`]);
+          
+          if (deleteError) {
+            console.error('Error deleting old avatar:', deleteError);
+          }
+        }
+      }
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -109,40 +302,21 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        throw updateError;
+      }
 
       setAvatarUrl(publicUrl);
-      toast.success('Profile photo updated successfully');
+      toast.success('Profile picture updated successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Failed to update profile photo');
+      toast.error('Failed to upload profile picture');
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: editForm.full_name,
-          location: editForm.location,
-          bio: editForm.bio,
-        })
-        .eq('id', user?.id);
-
-      if (error) throw error;
-
-      toast.success('Profile updated successfully');
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    }
-  };
+  }, [user, avatarUrl]);
 
   const fullName = profile?.full_name || 'Jessica Doe';
   const location = profile?.location || 'San Francisco, USA';
@@ -175,14 +349,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                           className="hidden"
                           onChange={handleImageUpload}
                           disabled={isUploading}
+                          id="avatar-upload"
                         />
                         <Button
                           variant="secondary"
                           size="icon"
                           className="h-8 w-8 rounded-full"
                           disabled={isUploading}
+                          onClick={() => document.getElementById('avatar-upload')?.click()}
                         >
-                          <Upload className="h-4 w-4" />
+                          {isUploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
                         </Button>
                       </label>
                     </div>
@@ -242,6 +422,38 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                           onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                         />
                       </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Travel Interests</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {availableInterests.map((interest) => (
+                              <Badge
+                                key={interest}
+                                variant={editForm.travel_interests.includes(interest) ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => handleInterestToggle(interest)}
+                              >
+                                {interest}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Languages</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {availableLanguages.map((language) => (
+                              <Badge
+                                key={language}
+                                variant={editForm.languages.includes(language) ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => handleLanguageToggle(language)}
+                              >
+                                {language}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                       <Button onClick={handleSaveProfile} className="w-full">
                         Save Changes
                       </Button>
@@ -261,8 +473,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Travel Interests</h3>
                   <div className="flex flex-wrap gap-2">
-                    {["Nature", "Photography", "Hiking", "Food", "Culture"].map((interest, index) => (
-                      <Badge key={index} variant="outline" className="bg-background">
+                    {profile?.travel_interests?.map((interest) => (
+                      <Badge key={interest} variant="secondary">
                         {interest}
                       </Badge>
                     ))}
@@ -271,19 +483,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                 
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Languages</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">English</span>
-                      <span className="text-sm font-medium">Native</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Spanish</span>
-                      <span className="text-sm font-medium">Conversational</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">French</span>
-                      <span className="text-sm font-medium">Basic</span>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {profile?.languages?.map((language) => (
+                      <Badge key={language} variant="secondary">
+                        {language}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
                 
@@ -321,14 +526,16 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
               ) : myGroups.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {myGroups.map(group => (
-                    <TravelGroupCard key={group.id} group={group} />
+                    <Link key={group.id} to={`/group/${group.id}`}>
+                      <TravelGroupCard group={group} />
+                    </Link>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12 bg-muted rounded-lg">
-                  <h3 className="text-xl font-medium mb-2">No trips created yet</h3>
+                  <h3 className="text-xl font-medium mb-2">No trips yet</h3>
                   <p className="text-muted-foreground mb-6">
-                    Start planning your next adventure by creating a new travel group.
+                    Start your travel journey by creating a new travel group.
                   </p>
                   <Button asChild>
                     <Link to="/create-group">Create Travel Group</Link>

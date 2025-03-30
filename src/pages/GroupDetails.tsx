@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import TravelGroupDetails from '@/components/TravelGroupDetails';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { TravelGroup } from '@/components/TravelGroupCard';
+import { TravelGroup } from '@/components/TravelGroupCard';
+import { useAuth } from '@/context/AuthContext';
 
 const GroupDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [group, setGroup] = useState<TravelGroup | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchGroupDetails = async () => {
       console.log('Fetching group details for ID:', id);
+      console.log('Current user:', user);
       
       if (!id) {
         console.log('No ID provided');
@@ -21,15 +25,11 @@ const GroupDetails = () => {
       }
       
       try {
-        // Fetch group details
+        // Fetch group details with creator info
         console.log('Fetching group data...');
         const { data: groupData, error: groupError } = await supabase
           .from('travel_groups')
-          .select(`
-            *,
-            creator:profiles(*),
-            tags:group_tags(id, tag)
-          `)
+          .select('*')
           .eq('id', id)
           .single();
           
@@ -38,7 +38,7 @@ const GroupDetails = () => {
           throw groupError;
         }
         
-        console.log('Group data received:', groupData);
+        console.log('Raw group data:', groupData);
         
         if (!groupData) {
           console.log('No group data found');
@@ -46,23 +46,58 @@ const GroupDetails = () => {
           return;
         }
 
+        // Fetch creator info
+        console.log('Fetching creator info...');
+        const { data: creatorData, error: creatorError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .eq('id', groupData.creator_id)
+          .single();
+          
+        if (creatorError) {
+          console.error('Error fetching creator:', creatorError);
+          // Don't throw, continue without creator info
+        }
+        
+        console.log('Creator data:', creatorData);
+
+        // Fetch tags
+        console.log('Fetching tags...');
+        const { data: tagsData, error: tagsError } = await supabase
+          .from('group_tags')
+          .select('tag')
+          .eq('travel_group_id', id);
+          
+        if (tagsError) {
+          console.error('Error fetching tags:', tagsError);
+          // Don't throw, continue without tags
+        }
+        
+        console.log('Tags data:', tagsData);
+
         // Fetch group members
         console.log('Fetching group members...');
         const { data: membersData, error: membersError } = await supabase
           .from('group_members')
           .select(`
-            *,
-            profile:profiles(*)
+            id,
+            profile_id,
+            status,
+            profile:profiles (
+              id,
+              full_name,
+              avatar_url
+            )
           `)
           .eq('travel_group_id', id)
           .eq('status', 'accepted');
           
         if (membersError) {
           console.error('Error fetching members:', membersError);
-          throw membersError;
+          // Don't throw, continue without members
         }
         
-        console.log('Members data received:', membersData);
+        console.log('Members data:', membersData);
 
         // Transform the data to match the TravelGroup interface
         const transformedGroup: TravelGroup = {
@@ -74,30 +109,32 @@ const GroupDetails = () => {
           endDate: groupData.end_date,
           maxParticipants: groupData.max_participants,
           currentParticipants: membersData?.length || 0,
-          tags: groupData.tags?.map((t: any) => t.tag) || []
+          tags: tagsData?.map(t => t.tag) || [],
+          isCreator: user?.id === groupData.creator_id
         };
         
         console.log('Transformed group data:', transformedGroup);
-        
-        // Validate required fields
-        if (!transformedGroup.id || !transformedGroup.title || !transformedGroup.destination || 
-            !transformedGroup.startDate || !transformedGroup.endDate || !transformedGroup.maxParticipants) {
-          console.error('Missing required fields in transformed group:', transformedGroup);
-          throw new Error('Missing required fields in group data');
-        }
+        console.log('Is creator?', user?.id === groupData.creator_id);
+        console.log('Creator check values:', {
+          userId: user?.id,
+          creatorId: groupData.creator_id,
+          match: user?.id === groupData.creator_id
+        });
         
         setGroup(transformedGroup);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error in fetchGroupDetails:', error);
-        toast.error('Could not load travel group details');
+        toast.error(error.message || 'Could not load travel group details');
         setGroup(null);
+        // Redirect to profile page after error
+        navigate('/profile');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchGroupDetails();
-  }, [id]);
+  }, [id, user?.id, navigate]);
   
   if (isLoading) {
     return (

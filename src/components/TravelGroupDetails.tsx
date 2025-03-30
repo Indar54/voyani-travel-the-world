@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Calendar, Users, Clock, Globe, Info, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, Users, Clock, Globe, Info, MessageSquare, Settings, Crown } from 'lucide-react';
 import type { TravelGroup } from './TravelGroupCard';
+import { Link } from 'react-router-dom';
 
 interface TravelGroupDetailsProps {
   group: TravelGroup;
@@ -40,9 +40,17 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
         </div>
         
         <div className="absolute bottom-0 left-0 p-6 md:p-8">
-          <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-voyani-800 font-medium mb-3">
-            {daysUntil > 0 ? `${daysUntil} days away` : "Ongoing"}
-          </Badge>
+          <div className="flex items-center gap-3 mb-3">
+            <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-voyani-800 font-medium">
+              {daysUntil > 0 ? `${daysUntil} days away` : "Ongoing"}
+            </Badge>
+            {group.isCreator && (
+              <Badge className="bg-voyani-600 text-white border-0 flex items-center">
+                <Crown className="h-3 w-3 mr-1" />
+                Created by you
+              </Badge>
+            )}
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{group.title}</h1>
           <div className="flex items-center text-white/90">
             <MapPin className="h-5 w-5 mr-2 text-voyani-300" />
@@ -98,7 +106,7 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
               </p>
               <p className="text-gray-300 mb-4">
                 Our itinerary includes plenty of time for both group activities and personal exploration.
-                This trip is designed for {group.tags[0].toLowerCase()} enthusiasts who want to experience
+                This trip is designed for {group.tags[0]?.toLowerCase()} enthusiasts who want to experience
                 the best that {group.destination} has to offer in good company.
               </p>
               
@@ -132,7 +140,9 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
           <div className="lg:col-span-1 animate-fade-in animate-delay-300">
             <Card className="overflow-hidden sticky top-24">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-4">Join This Trip</h3>
+                <h3 className="text-xl font-bold mb-4">
+                  {group.isCreator ? 'Manage Trip' : 'Join This Trip'}
+                </h3>
                 
                 <div className="flex justify-between mb-4">
                   <span className="text-muted-foreground">Trip Status</span>
@@ -148,34 +158,49 @@ const TravelGroupDetails: React.FC<TravelGroupDetailsProps> = ({ group }) => {
                 
                 <Separator className="my-4" />
                 
-                <h4 className="font-medium mb-3">Trip Organizer</h4>
-                <div className="flex items-center mb-6">
-                  <Avatar className="h-10 w-10 mr-3">
-                    <AvatarFallback className="bg-voyani-100 text-voyani-700">
-                      AD
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">Amit Desai</div>
-                    <div className="text-sm text-muted-foreground">18 trips organized</div>
+                {group.isCreator ? (
+                  <div className="space-y-3">
+                    <Button className="w-full flex items-center justify-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Manage Trip Settings
+                    </Button>
+                    <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Manage Members
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Button className="w-full">Request to Join</Button>
-                  <Button variant="outline" className="w-full flex items-center justify-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Message Organizer
-                  </Button>
-                </div>
-                
-                <div className="mt-6 text-sm text-muted-foreground flex items-start">
-                  <Info className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <p>
-                    Your request will be reviewed by the trip organizer. 
-                    You'll be notified once it's approved.
-                  </p>
-                </div>
+                ) : (
+                  <>
+                    <h4 className="font-medium mb-3">Trip Organizer</h4>
+                    <div className="flex items-center mb-6">
+                      <Avatar className="h-10 w-10 mr-3">
+                        <AvatarFallback className="bg-voyani-100 text-voyani-700">
+                          AD
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">Amit Desai</div>
+                        <div className="text-sm text-muted-foreground">18 trips organized</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Button className="w-full">Request to Join</Button>
+                      <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Message Organizer
+                      </Button>
+                    </div>
+                    
+                    <div className="mt-6 text-sm text-muted-foreground flex items-start">
+                      <Info className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
+                      <p>
+                        Your request will be reviewed by the trip organizer. 
+                        You'll be notified once it's approved.
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

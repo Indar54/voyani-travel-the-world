@@ -1,82 +1,70 @@
-
 import React from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface ChatListProps {
-  chats: any[];
-  activeChat: any;
-  onChatSelect: (chat: any) => void;
-  isLoading: boolean;
+interface Profile {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
 }
 
-const ChatList: React.FC<ChatListProps> = ({ 
-  chats, 
-  activeChat, 
-  onChatSelect,
-  isLoading
-}) => {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  
-  if (chats.length === 0) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-muted-foreground mb-2">No conversations yet</p>
-        <p className="text-sm text-muted-foreground">
-          Join or create travel groups to start chatting.
-        </p>
-      </div>
-    );
-  }
-  
+interface Message {
+  id: string;
+  content: string;
+  created_at: string;
+  sender: Profile;
+}
+
+interface ChatListProps {
+  messages: Message[];
+  currentUserId: string;
+}
+
+const ChatList: React.FC<ChatListProps> = ({ messages, currentUserId }) => {
   return (
-    <div>
-      {chats.map((chat) => (
-        <Button
-          key={chat.id}
-          variant="ghost"
-          className={`w-full justify-start py-6 px-4 h-auto ${
-            activeChat?.id === chat.id 
-              ? 'bg-accent' 
-              : 'hover:bg-accent/50'
-          }`}
-          onClick={() => onChatSelect(chat)}
-        >
-          <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={chat.image} />
-            <AvatarFallback>
-              {chat.title.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col items-start text-left">
-            <div className="flex justify-between w-full">
-              <span className="font-semibold truncate max-w-[120px]">
-                {chat.title}
-              </span>
-              <span className="text-xs text-muted-foreground ml-2">
-                {formatDistanceToNow(new Date(chat.lastMessageTime), { addSuffix: true })}
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-              {chat.lastMessage}
-            </span>
-            {chat.unread > 0 && (
-              <div className="bg-voyani-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mt-1">
-                {chat.unread}
+    <ScrollArea className="h-[400px] px-4">
+      <div className="space-y-4">
+        {messages.map((message) => {
+          const isCurrentUser = message.sender.id === currentUserId;
+          
+          return (
+            <div
+              key={message.id}
+              className={`flex items-start gap-2.5 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={message.sender.avatar_url} />
+                <AvatarFallback>
+                  {message.sender.full_name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className={`flex flex-col gap-1 ${isCurrentUser ? 'items-end' : ''}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {message.sender.full_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                
+                <div
+                  className={`rounded-lg px-3 py-2 max-w-[320px] ${
+                    isCurrentUser
+                      ? 'bg-voyani-600 text-white'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                </div>
               </div>
-            )}
-          </div>
-        </Button>
-      ))}
-    </div>
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
   );
 };
 

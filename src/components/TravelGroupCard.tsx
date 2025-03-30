@@ -1,10 +1,9 @@
-
-import React from 'react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Calendar, Users, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, Users, Crown, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TravelGroup {
   id: string;
@@ -16,105 +15,97 @@ export interface TravelGroup {
   maxParticipants: number;
   currentParticipants: number;
   tags: string[];
+  isCreator: boolean;
 }
 
-interface TravelGroupCardProps {
+export interface TravelGroupCardProps {
   group: TravelGroup;
 }
 
 const TravelGroupCard: React.FC<TravelGroupCardProps> = ({ group }) => {
-  // Format date display
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-  };
+  const [groupExists, setGroupExists] = useState(true);
 
-  const dateRange = `${formatDate(group.startDate)} - ${formatDate(group.endDate)}`;
-  
-  // Calculate days until trip
-  const daysUntil = Math.ceil((new Date(group.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Fallback image for broken links
-  const fallbackImage = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop";
-  
-  return (
-    <Link to={`/group/${group.id}`}>
-      <Card className="overflow-hidden hover-lift h-full bg-white border-white/60">
-        <div className="aspect-w-16 aspect-h-9 relative">
-          <img 
-            src={group.image} 
-            alt={group.title} 
-            className="object-cover w-full h-48"
-            loading="lazy"
-            onError={(e) => {
-              console.log(`Image failed to load: ${group.image}`);
-              (e.target as HTMLImageElement).src = fallbackImage;
-            }}
-          />
-          <div className="absolute top-4 left-4">
-            <Badge variant="secondary" className="bg-white/80 backdrop-blur-sm text-gray-800 font-medium">
-              {daysUntil > 0 ? `${daysUntil} days away` : "Ongoing"}
-            </Badge>
-          </div>
-        </div>
-        
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-lg line-clamp-1">{group.title}</h3>
-          </div>
-          
-          <div className="flex items-center text-sm text-muted-foreground mb-4">
-            <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-            <span>{group.destination}</span>
-          </div>
-          
-          <div className="flex space-x-4 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{dateRange}</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-1" />
-              <span>{group.currentParticipants}/{group.maxParticipants}</span>
-            </div>
-          </div>
-          
-          <div className="mt-4 flex flex-wrap gap-2">
-            {group.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="outline" className="bg-gray-100/60 border-gray-200 text-gray-700 text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {group.tags.length > 3 && (
-              <Badge variant="outline" className="bg-muted/60 text-muted-foreground text-xs">
-                +{group.tags.length - 3} more
-              </Badge>
-            )}
+  useEffect(() => {
+    const checkGroup = async () => {
+      if (!group?.id) return;
+
+      const { data, error } = await supabase
+        .from('travel_groups')
+        .select('id')
+        .eq('id', group.id)
+        .single();
+
+      if (error || !data) {
+        setGroupExists(false);
+      }
+    };
+
+    checkGroup();
+  }, [group?.id]);
+
+  // If group data is missing or invalid, show a placeholder card
+  if (!group || !group.id || !groupExists) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">This group is no longer available</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              The group may have been deleted or you may no longer have access to it.
+            </p>
           </div>
         </CardContent>
-        
-        <CardFooter className="p-5 pt-0 border-t border-border/50 flex justify-between items-center">
-          <div className="flex -space-x-2">
-            {[...Array(Math.min(3, group.currentParticipants))].map((_, i) => (
-              <Avatar key={i} className="border-2 border-white h-8 w-8">
-                <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
-                  {String.fromCharCode(65 + i)}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {group.currentParticipants > 3 && (
-              <Avatar className="border-2 border-white h-8 w-8">
-                <AvatarFallback className="bg-gray-100 text-gray-700 text-xs">
-                  +{group.currentParticipants - 3}
-                </AvatarFallback>
-              </Avatar>
-            )}
+      </Card>
+    );
+  }
+
+  return (
+    <Link to={`/group/${group.id}`}>
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <div className="relative h-48">
+          <img
+            src={group.image}
+            alt={group.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop';
+            }}
+          />
+          {group.isCreator && (
+            <Badge className="absolute top-2 right-2 bg-voyani-600">
+              <Crown className="h-3 w-3 mr-1" />
+              Created by you
+            </Badge>
+          )}
+        </div>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-2">{group.title}</h3>
+          <div className="flex items-center text-muted-foreground mb-3">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span>{group.destination}</span>
           </div>
-          <div className="text-gray-600 flex items-center font-medium text-sm">
-            View Details
-            <ChevronRight className="h-4 w-4 ml-1" />
+          <div className="flex items-center text-muted-foreground mb-4">
+            <Calendar className="h-4 w-4 mr-1" />
+            <span>
+              {new Date(group.startDate).toLocaleDateString()} - {new Date(group.endDate).toLocaleDateString()}
+            </span>
           </div>
-        </CardFooter>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-muted-foreground">
+              <Users className="h-4 w-4 mr-1" />
+              <span>{group.currentParticipants}/{group.maxParticipants} participants</span>
+            </div>
+            <div className="flex gap-2">
+              {group.tags.slice(0, 2).map((tag, index) => (
+                <Badge key={index} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
       </Card>
     </Link>
   );
