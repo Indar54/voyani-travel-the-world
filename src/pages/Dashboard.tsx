@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
@@ -12,9 +12,11 @@ import { MapPin, Users, Calendar, Loader2, Plus, MessageSquare } from 'lucide-re
 import { supabase } from '@/lib/supabase';
 import TravelGroupCard from '@/components/TravelGroupCard';
 import { BudgetTravelCard } from '@/components/BudgetTravelCard';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [myGroups, setMyGroups] = useState<any[]>([]);
   const [joinedGroups, setJoinedGroups] = useState<any[]>([]);
   const [suggestedGroups, setSuggestedGroups] = useState<any[]>([]);
@@ -22,12 +24,19 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    // Check if profile is complete
+    if (profile && (!profile.full_name || !profile.username || !profile.location)) {
+      toast.info('Please complete your profile to continue');
+      navigate('/profile');
+      return;
+    }
+
     if (user?.id) {
       fetchUserGroups();
       fetchSuggestedGroups();
       fetchBudgetTrips();
     }
-  }, [user?.id]);
+  }, [user?.id, profile, navigate]);
   
   const fetchUserGroups = async () => {
     if (!user?.id) return;
@@ -191,6 +200,28 @@ const Dashboard = () => {
     return name.substring(0, 2);
   };
   
+  // Show loading state while auth is being checked
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <Layout>

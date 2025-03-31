@@ -17,6 +17,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -34,8 +35,20 @@ export default defineConfig({
             '@radix-ui/react-tabs',
             '@radix-ui/react-toast',
           ],
+          'auth-vendor': ['@supabase/supabase-js'],
         },
       },
     },
+    target: 'esnext',
+    cssCodeSplit: true,
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@supabase/supabase-js',
+      'lucide-react',
+    ],
   },
 });

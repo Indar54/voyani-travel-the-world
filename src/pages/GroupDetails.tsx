@@ -9,18 +9,21 @@ import { useAuth } from '@/context/AuthContext';
 
 const GroupDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [group, setGroup] = useState<TravelGroup | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchGroupDetails = async () => {
       console.log('Fetching group details for ID:', id);
       console.log('Current user:', user);
+      console.log('Auth loading state:', authLoading);
       
       if (!id) {
         console.log('No ID provided');
+        setError('No group ID provided');
         return;
       }
       
@@ -35,6 +38,7 @@ const GroupDetails = () => {
           
         if (groupError) {
           console.error('Error fetching group:', groupError);
+          setError(groupError.message);
           throw groupError;
         }
         
@@ -42,6 +46,7 @@ const GroupDetails = () => {
         
         if (!groupData) {
           console.log('No group data found');
+          setError('Group not found');
           setGroup(null);
           return;
         }
@@ -122,21 +127,23 @@ const GroupDetails = () => {
         });
         
         setGroup(transformedGroup);
+        setError(null);
       } catch (error: any) {
         console.error('Error in fetchGroupDetails:', error);
+        setError(error.message || 'Could not load travel group details');
         toast.error(error.message || 'Could not load travel group details');
         setGroup(null);
-        // Redirect to profile page after error
-        navigate('/profile');
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchGroupDetails();
-  }, [id, user?.id, navigate]);
+    if (!authLoading) {
+      fetchGroupDetails();
+    }
+  }, [id, user?.id, navigate, authLoading]);
   
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-12 text-center">
@@ -150,6 +157,23 @@ const GroupDetails = () => {
     );
   }
   
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-12 text-center">
+          <h2 className="text-2xl font-bold mb-4">Error Loading Group</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <button 
+            onClick={() => navigate(-1)}
+            className="text-voyani-500 hover:text-voyani-600"
+          >
+            Go back
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+  
   if (!group) {
     return (
       <Layout>
@@ -158,6 +182,12 @@ const GroupDetails = () => {
           <p className="text-muted-foreground mb-6">
             The travel group you're looking for doesn't exist or has been removed.
           </p>
+          <button 
+            onClick={() => navigate(-1)}
+            className="text-voyani-500 hover:text-voyani-600"
+          >
+            Go back
+          </button>
         </div>
       </Layout>
     );

@@ -18,13 +18,20 @@ const AuthCallback = () => {
           return;
         }
 
-        if (session) {
-          toast.success('Email confirmed successfully!');
-          navigate('/dashboard');
-        } else {
-          toast.error('No session found');
+        if (!session) {
+          console.error('No session found in callback');
+          toast.error('Authentication failed - no session');
           navigate('/auth');
+          return;
         }
+
+        // Get the stored redirect path or default to dashboard
+        const redirectPath = sessionStorage.getItem('authRedirectPath') || '/dashboard';
+        sessionStorage.removeItem('authRedirectPath'); // Clean up
+
+        console.log('Auth callback successful, redirecting to:', redirectPath);
+        toast.success('Successfully signed in!');
+        navigate(redirectPath);
       } catch (error) {
         console.error('Error handling auth callback:', error);
         toast.error('Authentication failed');
@@ -36,10 +43,11 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-4">Confirming your email...</h2>
-        <p className="text-muted-foreground">Please wait while we verify your account.</p>
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-4"></div>
+        <h2 className="text-2xl font-bold mb-4">Finalizing sign in...</h2>
+        <p className="text-muted-foreground">Please wait while we complete the authentication.</p>
       </div>
     </div>
   );

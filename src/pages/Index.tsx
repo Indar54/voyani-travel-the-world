@@ -1,18 +1,50 @@
-
-import React from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import Layout from '@/components/Layout';
-import Hero from '@/components/Hero';
-import FeaturedGroups from '@/components/FeaturedGroups';
 import { Button } from '@/components/ui/button';
 import { Globe, Users, Calendar, ArrowRight, Heart, MessageCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+
+// Lazy load components that might be causing issues
+const Hero = lazy(() => import('@/components/Hero'));
+const FeaturedGroups = lazy(() => import('@/components/FeaturedGroups'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="container mx-auto px-4 py-12 text-center">
+    <div className="animate-pulse flex flex-col items-center">
+      <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/4 mb-8"></div>
+      <div className="h-64 bg-gray-300 rounded w-full max-w-2xl mb-6"></div>
+    </div>
+  </div>
+);
 
 const Index = () => {
+  const { isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    console.log('Index page mounted');
+    console.log('Auth loading state:', authLoading);
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <LoadingFallback />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-20">
-        <Hero />
+        <Suspense fallback={<LoadingFallback />}>
+          <Hero />
+        </Suspense>
         
-        <FeaturedGroups />
+        <Suspense fallback={<LoadingFallback />}>
+          <FeaturedGroups />
+        </Suspense>
         
         <section className="py-16 px-4">
           <div className="container mx-auto">

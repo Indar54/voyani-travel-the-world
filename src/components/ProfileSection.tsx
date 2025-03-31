@@ -19,15 +19,21 @@ import { toast } from 'sonner';
 interface ProfileSectionProps {
   isOwnProfile?: boolean;
   profile?: Tables<'profiles'> | null;
+  forceEdit?: boolean;
 }
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, profile = null }) => {
-  const { user } = useAuth();
+const ProfileSection: React.FC<ProfileSectionProps> = ({ 
+  isOwnProfile = true, 
+  profile = null,
+  forceEdit = false 
+}) => {
+  const { user, refreshProfile } = useAuth();
   const [myGroups, setMyGroups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(forceEdit);
   const [editForm, setEditForm] = useState({
     full_name: profile?.full_name || '',
+    username: profile?.username || '',
     location: profile?.location || '',
     bio: profile?.bio || '',
     travel_interests: profile?.travel_interests || [],
@@ -215,12 +221,27 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
     if (!user) return;
 
     try {
+      // Validate required fields
+      if (!editForm.full_name.trim()) {
+        toast.error('Full name is required');
+        return;
+      }
+      if (!editForm.username.trim()) {
+        toast.error('Username is required');
+        return;
+      }
+      if (!editForm.location.trim()) {
+        toast.error('Location is required');
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: editForm.full_name,
-          location: editForm.location,
-          bio: editForm.bio,
+          full_name: editForm.full_name.trim(),
+          username: editForm.username.trim(),
+          location: editForm.location.trim(),
+          bio: editForm.bio.trim(),
           travel_interests: editForm.travel_interests,
           languages: editForm.languages,
           updated_at: new Date().toISOString()
@@ -231,11 +252,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
 
       toast.success('Profile updated successfully');
       setIsEditing(false);
+      // Refresh the profile in AuthContext
+      await refreshProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
     }
-  }, [user, editForm]);
+  }, [user, editForm, refreshProfile]);
 
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -317,6 +340,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
       setIsUploading(false);
     }
   }, [user, avatarUrl]);
+
+  // Update isEditing when forceEdit changes
+  useEffect(() => {
+    if (forceEdit) {
+      setIsEditing(true);
+    }
+  }, [forceEdit]);
 
   const fullName = profile?.full_name || 'Jessica Doe';
   const location = profile?.location || 'San Francisco, USA';
@@ -404,6 +434,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                           id="full_name"
                           value={editForm.full_name}
                           onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                          placeholder="Enter your full name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                          id="username"
+                          value={editForm.username}
+                          onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                          placeholder="Choose a username"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
@@ -412,6 +454,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                           id="location"
                           value={editForm.location}
                           onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                          placeholder="Enter your location"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
@@ -420,6 +464,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ isOwnProfile = true, pr
                           id="bio"
                           value={editForm.bio}
                           onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                          placeholder="Tell us about yourself"
                         />
                       </div>
                       <div className="space-y-4">
