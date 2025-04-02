@@ -14,31 +14,27 @@ export type Database = {
           id: string
           joined_at: string
           profile_id: string
+          role: string
           status: string
-          travel_group_id: string
+          travel_group_id: string | null
         }
         Insert: {
           id?: string
           joined_at?: string
           profile_id: string
+          role?: string
           status?: string
-          travel_group_id: string
+          travel_group_id?: string | null
         }
         Update: {
           id?: string
           joined_at?: string
           profile_id?: string
+          role?: string
           status?: string
-          travel_group_id?: string
+          travel_group_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "group_members_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "group_members_travel_group_id_fkey"
             columns: ["travel_group_id"]
@@ -48,24 +44,63 @@ export type Database = {
           },
         ]
       }
+      group_messages: {
+        Row: {
+          content: string
+          created_at: string
+          group_id: string | null
+          id: string
+          sender_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          sender_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "travel_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_tags: {
         Row: {
           created_at: string
           id: string
           tag: string
-          travel_group_id: string
+          travel_group_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           tag: string
-          travel_group_id: string
+          travel_group_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           tag?: string
-          travel_group_id?: string
+          travel_group_id?: string | null
         }
         Relationships: [
           {
@@ -79,98 +114,90 @@ export type Database = {
       }
       profiles: {
         Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          username: string
-          full_name: string
           avatar_url: string | null
-          location: string
-          bio: string
-          travel_interests: string[]
-          languages: string[]
+          bio: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          languages: string[] | null
+          location: string | null
+          travel_interests: string[] | null
+          updated_at: string
+          username: string | null
         }
         Insert: {
-          id: string
-          created_at?: string
-          updated_at?: string
-          username: string
-          full_name: string
           avatar_url?: string | null
-          location: string
-          bio: string
-          travel_interests?: string[]
-          languages?: string[]
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          languages?: string[] | null
+          location?: string | null
+          travel_interests?: string[] | null
+          updated_at?: string
+          username?: string | null
         }
         Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          username?: string
-          full_name?: string
           avatar_url?: string | null
-          location?: string
-          bio?: string
-          travel_interests?: string[]
-          languages?: string[]
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          languages?: string[] | null
+          location?: string | null
+          travel_interests?: string[] | null
+          updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
       travel_groups: {
         Row: {
-          budget_range: number | null
+          budget_range: number
           created_at: string
           creator_id: string
-          current_participants: number | null
           description: string | null
           destination: string
           end_date: string
           id: string
           image_url: string | null
-          max_participants: number | null
+          max_participants: number
           start_date: string
+          status: string
           title: string
           updated_at: string
         }
         Insert: {
-          budget_range?: number | null
+          budget_range?: number
           created_at?: string
           creator_id: string
-          current_participants?: number | null
           description?: string | null
           destination: string
           end_date: string
           id?: string
           image_url?: string | null
-          max_participants?: number | null
+          max_participants?: number
           start_date: string
+          status?: string
           title: string
           updated_at?: string
         }
         Update: {
-          budget_range?: number | null
+          budget_range?: number
           created_at?: string
           creator_id?: string
-          current_participants?: number | null
           description?: string | null
           destination?: string
           end_date?: string
           id?: string
           image_url?: string | null
-          max_participants?: number | null
+          max_participants?: number
           start_date?: string
+          status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "travel_groups_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
