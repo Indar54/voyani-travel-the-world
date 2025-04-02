@@ -73,7 +73,7 @@ const Auth = () => {
   
   const handleSocialSignIn = (provider: 'google' | 'apple') => {
     if (provider === 'apple') {
-      toast.error('Apple Sign In is not available at this time. Please use Google or email instead.');
+      toast.error('Apple Sign In is not yet available. Please use Google or email instead.');
       return;
     }
     signInWithProvider(provider);
@@ -295,7 +295,7 @@ const Auth = () => {
             
             <Alert className="mt-4 border-yellow-200/50 bg-yellow-50/50 text-yellow-800">
               <AlertDescription className="text-xs">
-                Apple Sign In is not available yet. Please use Google or email instead.
+                Apple Sign In is coming soon! Please use Google or email login for now.
               </AlertDescription>
             </Alert>
           </CardContent>
