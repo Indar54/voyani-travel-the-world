@@ -10,6 +10,7 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log('Auth callback initiated');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -54,4 +55,4 @@ const AuthCallback = () => {
   );
 };
 
-export default AuthCallback; 
+export default AuthCallback;
