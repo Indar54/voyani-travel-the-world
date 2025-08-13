@@ -85,18 +85,18 @@ const Dashboard = () => {
       }));
       
       // Format joined groups
-      const formattedJoinedGroups = memberGroups.map(item => {
-        const group = item.travel_group;
+      const formattedJoinedGroups = (memberGroups || []).map(item => {
+        const group = item.travel_group as any;
         return {
           ...group,
-          id: group.id,
-          title: group.title,
-          destination: group.destination,
-          image: group.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
-          startDate: group.start_date,
-          endDate: group.end_date,
-          maxParticipants: group.max_participants,
-          currentParticipants: group.members.filter((m: any) => m.status === 'accepted').length
+          id: group?.id,
+          title: group?.title,
+          destination: group?.destination,
+          image: group?.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=800&auto=format&fit=crop',
+          startDate: group?.start_date,
+          endDate: group?.end_date,
+          maxParticipants: group?.max_participants,
+          currentParticipants: (group?.members || []).filter((m: any) => m.status === 'accepted').length
         };
       });
       

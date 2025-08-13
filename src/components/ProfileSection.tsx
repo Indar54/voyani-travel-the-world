@@ -90,7 +90,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
       console.log('Member group IDs:', memberGroups);
 
       // Fetch full details of member groups
-      const memberGroupIds = memberGroups.map(m => m.travel_group_id);
+      const memberGroupIds = memberGroups
+        .map(m => m.travel_group_id)
+        .filter((id): id is string => Boolean(id));
       const { data: memberGroupDetails, error: memberDetailsError } = await supabase
         .from('travel_groups')
         .select('*')

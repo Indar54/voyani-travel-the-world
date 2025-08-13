@@ -39,7 +39,14 @@ const UserSearch = () => {
         
       if (error) throw error;
       
-      setSearchResults(data || []);
+      const mapped = (data || []).map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name || 'Unknown',
+        avatar_url: p.avatar_url || null,
+        location: p.location || null,
+        created_at: p.created_at
+      }));
+      setSearchResults(mapped);
     } catch (error) {
       console.error('Error searching users:', error);
     } finally {

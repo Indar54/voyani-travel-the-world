@@ -280,7 +280,7 @@ export const Messages = () => {
                                 timestamp: message.created_at,
                                 sender: {
                                   id: message.profiles.id,
-                                  name: message.profiles.full_name,
+                                  name: message.profiles.full_name || 'Unknown',
                                   avatar: message.profiles.avatar_url
                                 },
                                 isOwn: message.sender_id === user?.id

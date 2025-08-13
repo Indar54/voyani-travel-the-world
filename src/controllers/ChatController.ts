@@ -142,8 +142,8 @@ export const ChatController = {
       if (fetchError) throw fetchError;
 
       // Check if user is message sender or group creator
-      const isMessageSender = message.sender_id === userId;
-      const isGroupCreator = message.travel_groups.creator_id === userId;
+      const isMessageSender = (message as any).sender_id === userId;
+      const isGroupCreator = (message as any).travel_groups && (message as any).travel_groups.creator_id === userId;
 
       if (!isMessageSender && !isGroupCreator) {
         throw new Error('Not authorized to delete this message');

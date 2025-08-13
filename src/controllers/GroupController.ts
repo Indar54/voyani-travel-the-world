@@ -54,10 +54,10 @@ export const GroupController = {
       if (error) throw error;
 
       // Transform raw data into TravelGroup format
-      const groups = (rawData || []).map(group => ({
+      const groups = (rawData || []).map((group: any) => ({
         ...group,
         members: [],
-        current_participants: 0,
+        current_participants: group.current_participants ?? 0,
         is_member: false,
         is_creator: false,
         creator: group.creator as ProfileRow
@@ -105,12 +105,12 @@ export const GroupController = {
       if (error) throw error;
 
       const group: TravelGroup = {
-        ...rawGroup,
+        ...(rawGroup as any),
         members: [],
-        current_participants: 0,
+        current_participants: (rawGroup as any).current_participants ?? 0,
         is_member: false,
         is_creator: false,
-        creator: rawGroup.creator as ProfileRow
+        creator: (rawGroup as any).creator as ProfileRow
       };
       
       if (userId) {
@@ -138,33 +138,43 @@ export const GroupController = {
 
   async fetchGroupMembers(groupId: string): Promise<{ members: GroupMember[], count: number }> {
     try {
-      const { data, error } = await supabase
+      // First fetch group_member rows
+      const { data: memberRows, error: membersError } = await supabase
         .from('group_members')
-        .select(`
-          id,
-          status,
-          joined_at,
-          profile:profiles(*)
-        `)
+        .select('id, status, joined_at, profile_id')
         .eq('travel_group_id', groupId)
         .order('joined_at', { ascending: false });
 
-      if (error) throw error;
+      if (membersError) throw membersError;
 
-      const groupMembers = {
-        members: data as GroupMember[],
-        count: 0
-      };
-      
-      // Get the count of members using proper count method
+      const profileIds = (memberRows || [])
+        .map((m) => m.profile_id)
+        .filter((id): id is string => Boolean(id));
+
+      // Then fetch matching profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', profileIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+      const members: GroupMember[] = (memberRows || []).map((m: any) => ({
+        id: m.id,
+        status: m.status,
+        joined_at: m.joined_at,
+        profile: profileMap.get(m.profile_id) as ProfileRow,
+      }));
+
+      // Count members accurately
       const { count } = await supabase
         .from('group_members')
         .select('*', { count: 'exact', head: true })
         .eq('travel_group_id', groupId);
-        
-      groupMembers.count = count || 0;
 
-      return groupMembers;
+      return { members, count: count || 0 };
     } catch (error) {
       console.error('Error fetching group members:', error);
       toast.error('Failed to load group members');
@@ -186,8 +196,7 @@ export const GroupController = {
           budget_range: groupData.budget || null,
           max_participants: groupData.maxParticipants || null,
           image_url: groupData.imageUrl || null,
-          creator_id: userId,
-          current_participants: 1 // Creator is the first participant
+          creator_id: userId
         })
         .select()
         .single();
@@ -283,14 +292,20 @@ export const GroupController = {
     try {
       const { data: group } = await supabase
         .from('travel_groups')
-        .select('current_participants, max_participants')
+        .select('max_participants')
         .eq('id', groupId)
         .single();
 
-      const currentParticipants = group?.current_participants ?? 0;
       const maxParticipants = group?.max_participants ?? 0;
 
-      if (currentParticipants >= maxParticipants) {
+      // Get count of existing accepted members
+      const { count: acceptedCount } = await supabase
+        .from('group_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('travel_group_id', groupId)
+        .eq('status', 'accepted');
+
+      if ((acceptedCount ?? 0) >= maxParticipants) {
         return { success: false, error: 'Group is full' };
       }
 
@@ -359,7 +374,7 @@ export const GroupController = {
       // Check if user is the creator
       const { data: group, error: groupError } = await supabase
         .from('travel_groups')
-        .select('creator_id, current_participants')
+        .select('creator_id')
         .eq('id', groupId)
         .single();
 
@@ -381,19 +396,6 @@ export const GroupController = {
 
       if (leaveError) throw leaveError;
 
-      // Update participant count
-      const { error: updateError } = await supabase
-        .from('travel_groups')
-        .update({
-          current_participants: Math.max(0, (group.current_participants || 1) - 1)
-        })
-        .eq('id', groupId);
-
-      if (updateError) {
-        console.error('Error updating participant count:', updateError);
-        // Continue even if this fails
-      }
-
       return { success: true };
     } catch (error) {
       console.error('Error leaving group:', error);
@@ -407,7 +409,7 @@ export const GroupController = {
       // Check if user is the creator and get current participants
       const { data: group, error: groupError } = await supabase
         .from('travel_groups')
-        .select('creator_id, max_participants, current_participants')
+        .select('creator_id, max_participants')
         .eq('id', groupId)
         .single();
 
@@ -421,7 +423,13 @@ export const GroupController = {
       }
 
       // Check if group is full
-      if (group.max_participants && group.current_participants >= group.max_participants) {
+      const { count: acceptedCount } = await supabase
+        .from('group_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('travel_group_id', groupId)
+        .eq('status', 'accepted');
+
+      if (group.max_participants && (acceptedCount ?? 0) >= group.max_participants) {
         return { 
           success: false, 
           error: 'This group is already at maximum capacity' 
@@ -437,19 +445,6 @@ export const GroupController = {
 
       if (approveError) throw approveError;
 
-      // Update participant count
-      const { error: updateError } = await supabase
-        .from('travel_groups')
-        .update({
-          current_participants: (group.current_participants || 0) + 1
-        })
-        .eq('id', groupId);
-
-      if (updateError) {
-        console.error('Error updating participant count:', updateError);
-        // Continue even if this fails
-      }
-      
       return { success: true };
     } catch (error) {
       console.error('Error approving join request:', error);
@@ -498,7 +493,7 @@ export const GroupController = {
       // Check if user is the creator and get current participants
       const { data: group, error: groupError } = await supabase
         .from('travel_groups')
-        .select('creator_id, current_participants')
+        .select('creator_id')
         .eq('id', groupId)
         .single();
 
@@ -527,19 +522,6 @@ export const GroupController = {
         .eq('profile_id', memberId);
 
       if (removeError) throw removeError;
-
-      // Update participant count
-      const { error: updateError } = await supabase
-        .from('travel_groups')
-        .update({
-          current_participants: Math.max(0, (group.current_participants || 1) - 1)
-        })
-        .eq('id', groupId);
-
-      if (updateError) {
-        console.error('Error updating participant count:', updateError);
-        // Continue even if this fails
-      }
 
       return { success: true };
     } catch (error) {
