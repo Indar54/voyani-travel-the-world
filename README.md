@@ -1,69 +1,59 @@
-# Welcome to your Lovable project
+# Voyani – The World is Waiting for You 🌍✈️
 
-## Project info
+**Voyani** is a social travel platform that connects like-minded travelers, encourages exploration, and creates meaningful human connections.  
+It’s more than just a trip planner — it’s a movement to explore the world, meet diverse people, and escape toxic social media.
 
-**URL**: https://lovable.dev/projects/444ac61c-fa9a-4678-b8d4-4021302b10e2
+---
 
-## How can I edit this code?
+## 🚀 Features
 
-There are several ways of editing your application.
+### 🧭 Core Features
+- **Find Travel Buddies** – Connect with people traveling to the same destination.
+- **Group Trip Planning** – Join planned group trips or create your own.
+- **Nearby Travelers** – Discover people around you who share your travel goals.
+- **Verified Travelers & Ratings** – Build trust through user verification and feedback.
+- **Tour Guide Booking System** – Hire professional local guides or Voyani’s own in-house guides.
+- **Customizable Group Size** – Decide how big or small your travel group will be.
 
-**Use Lovable**
+### 🎉 Special Experiences
+- **Concert & Event Trips** – Join national and international concerts with others.
+- **Exclusive Deals & Local Discounts** *(Future Update)*.
+- **AI-Powered Travel Buddies** *(Future Update)*.
+- **Live Travel Map & Itinerary Planner** *(Future Update)*.
+- **Travel Stories & Vlogs Section** *(Future Update)*.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/444ac61c-fa9a-4678-b8d4-4021302b10e2) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🎯 Our Mission
+Voyani is more than an app — it’s a **social initiative** to:
+- Help people socialize beyond the internet.
+- Encourage exploration of different places and cultures.
+- Provide relief from negativity and unhealthy comparisons on social media.
+- Promote mental well-being through real-life human connections.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠 Tech Stack
+- **Frontend:** React.js
+- **Backend:** Node.js
+- **Hosting:** Firebase Hosting
+- **Database & Auth:** Firebase Firestore + Firebase Authentication
+- **Storage:** Firebase Storage
+- **Cloud Functions:** Firebase Cloud Functions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 📦 Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+# Clone the repository
+git clone https://github.com/<yourusername>/voyani.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project folder
+cd voyani
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/444ac61c-fa9a-4678-b8d4-4021302b10e2) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
